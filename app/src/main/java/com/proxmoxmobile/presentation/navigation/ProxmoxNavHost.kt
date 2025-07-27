@@ -36,8 +36,7 @@ fun ProxmoxNavHost(
         
         composable(Screen.ServerList.route) {
             ServerListScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
@@ -50,57 +49,49 @@ fun ProxmoxNavHost(
         
         composable(Screen.VMList.route) {
             VMListScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.ContainerList.route) {
             ContainerListScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Storage.route) {
             StorageScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Network.route) {
             NetworkScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Users.route) {
             UserManagementScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Backups.route) {
             BackupScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Tasks.route) {
             TaskScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         
         composable(Screen.Cluster.route) {
             ClusterScreen(
-                navController = navController,
-                viewModel = viewModel
+                navController = navController
             )
         }
         

@@ -1,0 +1,62 @@
+[
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xxxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xxxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-mdpi_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-mdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xhdpi_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xhdpi_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xxhdpi_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xxxhdpi_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xxxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/xml_backup_rules.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-hdpi_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-hdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-hdpi_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-hdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/xml_data_extraction_rules.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-xxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-xxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.proxmoxmobile.app-merged_res-78:/mipmap-mdpi_ic_launcher.xml.flat",
+        "source": "com.proxmoxmobile.app-main-80:/mipmap-mdpi/ic_launcher.xml"
+    }
+]
