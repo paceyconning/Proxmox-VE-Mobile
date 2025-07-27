@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-v31/values-v31.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-67:/values-v31/values-v31.xml",
             "map": [
                 {
                     "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/63abdbc34207d1b768a50207c89d1ee6/transformed/jetified-core-splashscreen-1.0.1/res/values-v31/values-v31.xml",

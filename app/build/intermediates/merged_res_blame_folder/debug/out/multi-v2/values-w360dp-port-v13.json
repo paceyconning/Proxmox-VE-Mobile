@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-w360dp-port-v13/values-w360dp-port-v13.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-67:/values-w360dp-port-v13/values-w360dp-port-v13.xml",
             "map": [
                 {
                     "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/e88a11cf716a20cc26e305bf5c6a2c14/transformed/material-1.11.0/res/values-w360dp-port-v13/values-w360dp-port-v13.xml",

@@ -38,13 +38,6 @@ fun DashboardScreen(
                 // Add a small delay to ensure authentication is complete
                 kotlinx.coroutines.delay(1000)
                 
-                // Check if we're authenticated before proceeding
-                if (!viewModel.isAuthenticated.value) {
-                    Log.e("DashboardScreen", "Not authenticated, cannot load nodes")
-                    errorMessage = "Not authenticated - please login again"
-                    return@launch
-                }
-                
                 isLoading = true
                 errorMessage = null
                 

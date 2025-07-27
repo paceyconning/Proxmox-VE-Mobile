@@ -1,6 +1,5 @@
 package com.proxmoxmobile.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proxmoxmobile.data.api.AuthenticationService
@@ -8,24 +7,17 @@ import com.proxmoxmobile.data.api.ProxmoxApiClient
 import com.proxmoxmobile.data.api.ProxmoxApiService
 import com.proxmoxmobile.data.model.LoginResponse
 import com.proxmoxmobile.data.model.ServerConfig
+import com.proxmoxmobile.data.security.SecureStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.util.Log
 import android.content.Context
-import android.content.SharedPreferences
 
 class MainViewModel : ViewModel() {
-
     companion object {
         private const val TAG = "MainViewModel"
-        private const val PREFS_NAME = "ProxmoxPrefs"
-        private const val KEY_HOST = "host"
-        private const val KEY_PORT = "port"
-        private const val KEY_USERNAME = "username"
-        private const val KEY_REALM = "realm"
-        private const val KEY_USE_HTTPS = "use_https"
-        private const val KEY_SAVE_CREDENTIALS = "save_credentials"
     }
 
     private val authenticationService = AuthenticationService()
@@ -49,57 +41,34 @@ class MainViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private var sharedPreferences: SharedPreferences? = null
+    private var secureStorage: SecureStorage? = null
 
     fun initialize(context: Context) {
-        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        secureStorage = SecureStorage(context)
     }
 
-    fun saveCredentials(serverConfig: ServerConfig, saveCredentials: Boolean) {
-        sharedPreferences?.let { prefs ->
-            prefs.edit().apply {
-                putString(KEY_HOST, serverConfig.host)
-                putInt(KEY_PORT, serverConfig.port)
-                putString(KEY_USERNAME, serverConfig.username)
-                putString(KEY_REALM, serverConfig.realm)
-                putBoolean(KEY_USE_HTTPS, serverConfig.useHttps)
-                putBoolean(KEY_SAVE_CREDENTIALS, saveCredentials)
-                apply()
-            }
-        }
+    fun saveCredentials(serverConfig: ServerConfig, password: String, saveCredentials: Boolean) {
+        secureStorage?.saveCredentials(
+            host = serverConfig.host,
+            port = serverConfig.port,
+            username = serverConfig.username,
+            password = password,
+            realm = serverConfig.realm,
+            useHttps = serverConfig.useHttps,
+            saveCredentials = saveCredentials
+        )
     }
 
-    fun loadSavedCredentials(): ServerConfig? {
-        sharedPreferences?.let { prefs ->
-            val saveCredentials = prefs.getBoolean(KEY_SAVE_CREDENTIALS, false)
-            if (saveCredentials) {
-                val host = prefs.getString(KEY_HOST, "")
-                val port = prefs.getInt(KEY_PORT, 8006)
-                val username = prefs.getString(KEY_USERNAME, "")
-                val realm = prefs.getString(KEY_REALM, "pam")
-                val useHttps = prefs.getBoolean(KEY_USE_HTTPS, true)
-                
-                if (host?.isNotBlank() == true && username?.isNotBlank() == true) {
-                    return ServerConfig(
-                        host = host,
-                        port = port,
-                        username = username,
-                        password = "", // Don't save password for security
-                        realm = realm ?: "pam",
-                        useHttps = useHttps
-                    )
-                }
-            }
-        }
-        return null
+    fun loadSavedCredentials(): SecureStorage.SavedCredentials? {
+        return secureStorage?.loadSavedCredentials()
     }
 
     fun clearSavedCredentials() {
-        sharedPreferences?.edit()?.clear()?.apply()
+        secureStorage?.clearSavedCredentials()
     }
 
     fun hasSavedCredentials(): Boolean {
-        return sharedPreferences?.getBoolean(KEY_SAVE_CREDENTIALS, false) == true
+        return secureStorage?.hasSavedCredentials() ?: false
     }
 
     fun authenticate(serverConfig: ServerConfig) {

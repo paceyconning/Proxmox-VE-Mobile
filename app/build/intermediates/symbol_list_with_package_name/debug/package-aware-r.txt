@@ -77,11 +77,6 @@ animator mtrl_fab_hide_motion_spec
 animator mtrl_fab_show_motion_spec
 animator mtrl_fab_transformation_sheet_collapse_spec
 animator mtrl_fab_transformation_sheet_expand_spec
-array assume_strong_biometrics_models
-array crypto_fingerprint_fallback_prefixes
-array crypto_fingerprint_fallback_vendors
-array delay_showing_prompt_models
-array hide_fingerprint_instantly_prefixes
 attr action
 attr actionBarDivider
 attr actionBarItemBackground
@@ -1321,7 +1316,6 @@ color background_floating_material_dark
 color background_floating_material_light
 color background_material_dark
 color background_material_light
-color biometric_error_color
 color bright_foreground_disabled_material_dark
 color bright_foreground_disabled_material_light
 color bright_foreground_inverse_material_dark
@@ -2271,7 +2265,6 @@ dimen disabled_alpha_material_light
 dimen fastscroll_default_thickness
 dimen fastscroll_margin
 dimen fastscroll_minimum_range
-dimen fingerprint_icon_size
 dimen highlight_alpha_material_colored
 dimen highlight_alpha_material_dark
 dimen highlight_alpha_material_light
@@ -3024,8 +3017,6 @@ drawable design_ic_visibility
 drawable design_ic_visibility_off
 drawable design_password_eye
 drawable design_snackbar_background
-drawable fingerprint_dialog_error
-drawable fingerprint_dialog_fp_icon
 drawable ic_arrow_back_black_24
 drawable ic_call_answer
 drawable ic_call_answer_low
@@ -3232,7 +3223,6 @@ id clear_text
 id clip_horizontal
 id clip_vertical
 id clockwise
-id coil_request_manager
 id collapseActionView
 id compose_view_saveable_id_tag
 id compress
@@ -3294,10 +3284,6 @@ id fill
 id fill_horizontal
 id fill_vertical
 id filled
-id fingerprint_description
-id fingerprint_error
-id fingerprint_icon
-id fingerprint_subtitle
 id fitCenter
 id fitEnd
 id fitStart
@@ -3725,7 +3711,6 @@ layout design_navigation_menu
 layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
-layout fingerprint_dialog_layout
 layout ime_base_split_test_activity
 layout ime_secondary_split_test_activity
 layout m3_alert_dialog
@@ -3853,7 +3838,6 @@ string cluster
 string collapsed
 string coming_soon
 string configure_notifications
-string confirm_device_credential_password
 string connect
 string connected_server
 string containers
@@ -3891,7 +3875,6 @@ string date_range_picker_scroll_to_previous_month
 string date_range_picker_start_headline
 string date_range_picker_title
 string default_error_message
-string default_error_msg
 string default_popup_window_title
 string dialog
 string dropdown_menu
@@ -3901,16 +3884,6 @@ string expanded
 string exposed_dropdown_menu_content_description
 string fab_transformation_scrim_behavior
 string fab_transformation_sheet_behavior
-string fingerprint_dialog_touch_sensor
-string fingerprint_error_hw_not_available
-string fingerprint_error_hw_not_present
-string fingerprint_error_lockout
-string fingerprint_error_no_fingerprints
-string fingerprint_error_user_canceled
-string fingerprint_not_recognized
-string generic_error_no_device_credential
-string generic_error_no_keyguard
-string generic_error_user_canceled
 string hide_bottom_view_on_scroll_behavior
 string host
 string icon_content_description

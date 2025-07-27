@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-v23/values-v23.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-67:/values-v23/values-v23.xml",
             "map": [
                 {
                     "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2996af575ae0b7162b81d122d8a08eed/transformed/appcompat-1.6.1/res/values-v23/values-v23.xml",

@@ -45,13 +45,14 @@ fun LoginScreen(
 
     // Load saved credentials on first load
     LaunchedEffect(Unit) {
-        val savedConfig = viewModel.loadSavedCredentials()
-        if (savedConfig != null) {
-            host = savedConfig.host
-            port = savedConfig.port.toString()
-            username = savedConfig.username
-            realm = savedConfig.realm
-            useHttps = savedConfig.useHttps
+        val savedCredentials = viewModel.loadSavedCredentials()
+        if (savedCredentials != null) {
+            host = savedCredentials.host
+            port = savedCredentials.port.toString()
+            username = savedCredentials.username
+            password = savedCredentials.password
+            realm = savedCredentials.realm
+            useHttps = savedCredentials.useHttps
             saveCredentials = true
         }
     }
@@ -273,7 +274,7 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Save login details (password not saved)",
+                        text = "Save login details (encrypted)",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -295,9 +296,9 @@ fun LoginScreen(
                         useHttps = useHttps
                     )
                     
-                    // Save credentials if checkbox is checked
+                    // Save credentials if checkbox is checked (including password)
                     if (saveCredentials) {
-                        viewModel.saveCredentials(serverConfig, true)
+                        viewModel.saveCredentials(serverConfig, password, true)
                     }
                     
                     viewModel.authenticate(serverConfig)
