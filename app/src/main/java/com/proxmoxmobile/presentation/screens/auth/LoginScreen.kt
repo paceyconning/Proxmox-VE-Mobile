@@ -34,6 +34,7 @@ fun LoginScreen(
     var realm by remember { mutableStateOf("pam") }
     var useHttps by remember { mutableStateOf(true) }
     var passwordVisible by remember { mutableStateOf(false) }
+    var saveCredentials by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     
@@ -41,6 +42,19 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+
+    // Load saved credentials on first load
+    LaunchedEffect(Unit) {
+        val savedConfig = viewModel.loadSavedCredentials()
+        if (savedConfig != null) {
+            host = savedConfig.host
+            port = savedConfig.port.toString()
+            username = savedConfig.username
+            realm = savedConfig.realm
+            useHttps = savedConfig.useHttps
+            saveCredentials = true
+        }
+    }
 
     // Navigate to dashboard when authenticated
     LaunchedEffect(isAuthenticated) {
@@ -246,6 +260,23 @@ fun LoginScreen(
                     singleLine = true,
                     enabled = !isLoading
                 )
+
+                // Save Credentials Checkbox
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = saveCredentials,
+                        onCheckedChange = { saveCredentials = it },
+                        enabled = !isLoading
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Save login details (password not saved)",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
 
@@ -263,6 +294,12 @@ fun LoginScreen(
                         realm = realm,
                         useHttps = useHttps
                     )
+                    
+                    // Save credentials if checkbox is checked
+                    if (saveCredentials) {
+                        viewModel.saveCredentials(serverConfig, true)
+                    }
+                    
                     viewModel.authenticate(serverConfig)
                 }
             },

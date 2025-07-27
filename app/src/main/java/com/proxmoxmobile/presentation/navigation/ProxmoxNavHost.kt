@@ -21,9 +21,9 @@ import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 
 @Composable
 fun ProxmoxNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    viewModel: MainViewModel
 ) {
-    val viewModel = remember { MainViewModel() }
     NavHost(
         navController = navController,
         startDestination = Screen.Login.route

@@ -7,21 +7,39 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.proxmoxmobile.presentation.navigation.ProxmoxNavHost
-import com.proxmoxmobile.presentation.theme.ProxmoxVEMobileTheme
+import com.proxmoxmobile.presentation.theme.ProxmoxTheme
+import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        
         setContent {
-            ProxmoxVEMobileTheme {
+            val navController = rememberNavController()
+            val viewModel = remember { MainViewModel() }
+            
+            // Initialize ViewModel with context for SharedPreferences
+            LaunchedEffect(Unit) {
+                viewModel.initialize(this@MainActivity)
+            }
+            
+            // Check for saved credentials and auto-login
+            LaunchedEffect(Unit) {
+                val savedConfig = viewModel.loadSavedCredentials()
+                if (savedConfig != null) {
+                    // Auto-login with saved credentials (user will need to enter password)
+                    viewModel.setCurrentServer(savedConfig)
+                }
+            }
+            
+            ProxmoxTheme {
                 val systemUiController = rememberSystemUiController()
                 val useDarkIcons = !isSystemInDarkTheme()
 
@@ -37,9 +55,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
                     ProxmoxNavHost(
-                        navController = navController
+                        navController = navController,
+                        viewModel = viewModel
                     )
                 }
             }
