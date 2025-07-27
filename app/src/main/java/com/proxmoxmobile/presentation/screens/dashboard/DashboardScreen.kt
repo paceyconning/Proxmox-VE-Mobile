@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -17,6 +18,7 @@ import com.proxmoxmobile.data.model.Node
 import com.proxmoxmobile.presentation.navigation.Screen
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 import android.util.Log
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,33 +29,48 @@ fun DashboardScreen(
     var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     // Fetch nodes when screen loads
     LaunchedEffect(Unit) {
-        isLoading = true
-        errorMessage = null
-        
-        try {
-            val apiService = viewModel.getApiService()
-            if (apiService != null) {
-                val response = apiService.getNodes()
-                nodes = response.data
-                Log.d("DashboardScreen", "Loaded ${nodes.size} nodes")
-            } else {
-                errorMessage = "Not authenticated"
+        scope.launch {
+            try {
+                isLoading = true
+                errorMessage = null
+                
+                Log.d("DashboardScreen", "Starting to load nodes")
+                val apiService = viewModel.getApiService()
+                if (apiService != null) {
+                    Log.d("DashboardScreen", "API service available, fetching nodes")
+                    val response = apiService.getNodes()
+                    Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
+                    nodes = response.data ?: emptyList()
+                    Log.d("DashboardScreen", "Successfully loaded ${nodes.size} nodes")
+                } else {
+                    Log.e("DashboardScreen", "API service is null")
+                    errorMessage = "Not authenticated - please login again"
+                }
+            } catch (e: retrofit2.HttpException) {
+                Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
+                when (e.code()) {
+                    401 -> errorMessage = "Authentication required - please login again"
+                    403 -> errorMessage = "Access forbidden - check permissions"
+                    500 -> errorMessage = "Server error - please try again"
+                    else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardScreen", "Failed to load nodes", e)
+                errorMessage = "Failed to load nodes: ${e.message}"
+            } finally {
+                isLoading = false
             }
-        } catch (e: Exception) {
-            Log.e("DashboardScreen", "Failed to load nodes", e)
-            errorMessage = "Failed to load nodes: ${e.message}"
-        } finally {
-            isLoading = false
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Proxmox VE Dashboard") },
+                title = { Text("Proxmox VE") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -82,6 +99,16 @@ fun DashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // System Status Widget - Only show if we have valid node data
+            if (nodes.isNotEmpty()) {
+                val firstNode = nodes.first()
+                if (isValidNode(firstNode)) {
+                    item {
+                        SystemStatusCard(firstNode)
+                    }
+                }
+            }
+
             // Welcome Section
             item {
                 Card(
@@ -91,25 +118,26 @@ fun DashboardScreen(
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(20.dp)
                     ) {
                         Text(
                             text = "Welcome to Proxmox VE",
                             style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Manage your virtual machines, containers, and infrastructure",
+                            text = "Manage your virtual machines and containers",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
 
-            // Error Message
-            if (errorMessage != null) {
+            // Error message
+            errorMessage?.let { error ->
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -118,7 +146,7 @@ fun DashboardScreen(
                         )
                     ) {
                         Text(
-                            text = errorMessage!!,
+                            text = error,
                             modifier = Modifier.padding(16.dp),
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -126,18 +154,14 @@ fun DashboardScreen(
                 }
             }
 
-            // Loading State
+            // Loading state
             if (isLoading) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Loading nodes...")
-                        }
+                        CircularProgressIndicator()
                     }
                 }
             }
@@ -147,7 +171,8 @@ fun DashboardScreen(
                 item {
                     Text(
                         text = "Nodes (${nodes.size})",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -156,7 +181,11 @@ fun DashboardScreen(
                     NodeCard(
                         node = node,
                         onClick = {
-                            navController.navigate("${Screen.VMList.route}/${node.node}")
+                            try {
+                                navController.navigate("${Screen.VMList.route}/${node.node}")
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Navigation error", e)
+                            }
                         }
                     )
                 }
@@ -166,7 +195,8 @@ fun DashboardScreen(
             item {
                 Text(
                     text = "Quick Actions",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -174,26 +204,36 @@ fun DashboardScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickActionCard(
-                        title = "Virtual Machines",
-                        icon = Icons.Default.Computer,
+                        title = "LXC",
+                        subtitle = "Containers",
+                        icon = Icons.Default.Storage,
                         modifier = Modifier.weight(1f),
                         onClick = {
-                            if (nodes.isNotEmpty()) {
-                                navController.navigate("${Screen.VMList.route}/${nodes.first().node}")
+                            try {
+                                if (nodes.isNotEmpty()) {
+                                    navController.navigate("${Screen.ContainerList.route}/${nodes.first().node}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "LXC navigation error", e)
                             }
                         }
                     )
                     
                     QuickActionCard(
-                        title = "Containers",
-                        icon = Icons.Default.Storage,
+                        title = "VM",
+                        subtitle = "Machines",
+                        icon = Icons.Default.Computer,
                         modifier = Modifier.weight(1f),
                         onClick = {
-                            if (nodes.isNotEmpty()) {
-                                navController.navigate("${Screen.ContainerList.route}/${nodes.first().node}")
+                            try {
+                                if (nodes.isNotEmpty()) {
+                                    navController.navigate("${Screen.VMList.route}/${nodes.first().node}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "VM navigation error", e)
                             }
                         }
                     )
@@ -203,20 +243,36 @@ fun DashboardScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickActionCard(
                         title = "Storage",
+                        subtitle = "Pools",
                         icon = Icons.Default.Storage,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Storage.route) }
+                        onClick = { 
+                            try {
+                                if (nodes.isNotEmpty()) {
+                                    navController.navigate("${Screen.Storage.route}/${nodes.first().node}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Storage navigation error", e)
+                            }
+                        }
                     )
                     
                     QuickActionCard(
                         title = "Network",
+                        subtitle = "Interfaces",
                         icon = Icons.Default.Wifi,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Network.route) }
+                        onClick = { 
+                            try {
+                                navController.navigate(Screen.Network.route)
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Network navigation error", e)
+                            }
+                        }
                     )
                 }
             }
@@ -224,20 +280,34 @@ fun DashboardScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickActionCard(
                         title = "Users",
+                        subtitle = "Management",
                         icon = Icons.Default.People,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Users.route) }
+                        onClick = { 
+                            try {
+                                navController.navigate(Screen.Users.route)
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Users navigation error", e)
+                            }
+                        }
                     )
                     
                     QuickActionCard(
                         title = "Backups",
+                        subtitle = "Restore",
                         icon = Icons.Default.Backup,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Backups.route) }
+                        onClick = { 
+                            try {
+                                navController.navigate(Screen.Backups.route)
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Backups navigation error", e)
+                            }
+                        }
                     )
                 }
             }
@@ -245,24 +315,134 @@ fun DashboardScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuickActionCard(
                         title = "Tasks",
-                        icon = Icons.Default.List,
+                        subtitle = "Monitor",
+                        icon = Icons.AutoMirrored.Filled.List,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Tasks.route) }
+                        onClick = { 
+                            try {
+                                navController.navigate(Screen.Tasks.route)
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Tasks navigation error", e)
+                            }
+                        }
                     )
                     
                     QuickActionCard(
                         title = "Cluster",
+                        subtitle = "Status",
                         icon = Icons.Default.AccountTree,
                         modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(Screen.Cluster.route) }
+                        onClick = { 
+                            try {
+                                navController.navigate(Screen.Cluster.route)
+                            } catch (e: Exception) {
+                                Log.e("DashboardScreen", "Cluster navigation error", e)
+                            }
+                        }
                     )
                 }
             }
         }
+    }
+}
+
+private fun isValidNode(node: Node): Boolean {
+    return node.node.isNotBlank() && 
+           node.cpu >= 0 && 
+           node.mem >= 0 && 
+           node.uptime >= 0
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SystemStatusCard(node: Node) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MonitorHeart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "System Status",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                StatusItem(
+                    label = "CPU",
+                    value = "${node.cpu.toInt()}%",
+                    icon = Icons.Default.Memory
+                )
+                
+                StatusItem(
+                    label = "Memory",
+                    value = "${(node.mem / 1024 / 1024 / 1024).toInt()}GB",
+                    icon = Icons.Default.Storage
+                )
+                
+                StatusItem(
+                    label = "Uptime",
+                    value = "${(node.uptime / 3600).toInt()}h",
+                    icon = Icons.Default.Schedule
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun StatusItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+        )
     }
 }
 
@@ -293,6 +473,7 @@ fun NodeCard(
                     Text(
                         text = node.node,
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
@@ -301,11 +482,6 @@ fun NodeCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "View details",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -315,6 +491,7 @@ fun NodeCard(
 @Composable
 fun QuickActionCard(
     title: String,
+    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
@@ -330,16 +507,20 @@ fun QuickActionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

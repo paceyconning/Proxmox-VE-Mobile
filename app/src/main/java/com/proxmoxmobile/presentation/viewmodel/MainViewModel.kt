@@ -83,6 +83,9 @@ class MainViewModel : ViewModel() {
         val csrf = _csrfToken.value
         
         Log.d(TAG, "Creating API service for server: ${server.host}")
+        Log.d(TAG, "Auth token available: ${!token.isNullOrBlank()}")
+        Log.d(TAG, "CSRF token available: ${!csrf.isNullOrBlank()}")
+        
         return apiClient.createApiService(server, token, csrf)
     }
 

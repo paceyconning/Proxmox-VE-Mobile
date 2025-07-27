@@ -17,6 +17,7 @@ import androidx.navigation.NavController
 import com.proxmoxmobile.data.model.VirtualMachine
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,27 +35,64 @@ fun VMListScreen(
 
     // Load VMs when the screen is first displayed
     LaunchedEffect(apiService, nodeName) {
-        if (apiService != null && nodeName != null) {
+        if (apiService != null && !nodeName.isNullOrBlank()) {
             scope.launch {
-                isLoading = true
-                errorMessage = null
                 try {
+                    isLoading = true
+                    errorMessage = null
+                    
+                    Log.d("VMListScreen", "Loading VMs for node: $nodeName")
                     val response = apiService.getVirtualMachines(nodeName)
-                    vms = response.data
+                    Log.d("VMListScreen", "API response received: ${response.data?.size ?: 0} VMs")
+                    
+                    // Safely handle the response data
+                    val vmList = response.data ?: emptyList()
+                    Log.d("VMListScreen", "Processed ${vmList.size} VMs")
+                    
+                    // Validate each VM before adding to the list
+                    val validVMs = vmList.filter { vm ->
+                        try {
+                            vm.vmid > 0 && 
+                            vm.name.isNotBlank() && 
+                            vm.status.isNotBlank() &&
+                            vm.cpu >= 0 &&
+                            vm.mem >= 0 &&
+                            vm.maxmem >= 0 &&
+                            vm.uptime >= 0
+                        } catch (e: Exception) {
+                            Log.w("VMListScreen", "Invalid VM data: ${e.message}")
+                            false
+                        }
+                    }
+                    
+                    vms = validVMs
+                    Log.d("VMListScreen", "Successfully loaded ${vms.size} valid VMs")
+                    
+                } catch (e: retrofit2.HttpException) {
+                    Log.e("VMListScreen", "HTTP error loading VMs: ${e.code()}", e)
+                    when (e.code()) {
+                        401 -> errorMessage = "Authentication required - please login again"
+                        403 -> errorMessage = "Access forbidden - check permissions"
+                        404 -> errorMessage = "Node not found: $nodeName"
+                        500 -> errorMessage = "Server error - please try again"
+                        else -> errorMessage = "Failed to load VMs: HTTP ${e.code()}"
+                    }
                 } catch (e: Exception) {
+                    Log.e("VMListScreen", "Failed to load VMs", e)
                     errorMessage = "Failed to load VMs: ${e.message}"
                 } finally {
                     isLoading = false
                 }
             }
+        } else {
+            errorMessage = "Invalid node name or API service not available"
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Virtual Machines - ${nodeName ?: "Unknown"}")
-                },
+                title = { Text("Virtual Machines - ${nodeName ?: "Unknown"}") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -92,6 +130,33 @@ fun VMListScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
+                }
+            } else if (vms.isEmpty() && errorMessage == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Computer,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No Virtual Machines Found",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "This node doesn't have any VMs configured",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
@@ -133,7 +198,7 @@ fun VMCard(vm: VirtualMachine) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = vm.name,
+                        text = vm.name.ifBlank { "Unknown VM" },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -149,7 +214,7 @@ fun VMCard(vm: VirtualMachine) {
                         "running" -> Icons.Default.PlayArrow
                         "stopped" -> Icons.Default.Stop
                         "paused" -> Icons.Default.Pause
-                        else -> Icons.AutoMirrored.Filled.Help
+                        else -> Icons.Default.Help
                     },
                     contentDescription = vm.status,
                     tint = when (vm.status) {
@@ -174,7 +239,7 @@ fun VMCard(vm: VirtualMachine) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "${vm.cpu}%",
+                        text = "${vm.cpu.toInt()}%",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -204,7 +269,7 @@ fun VMCard(vm: VirtualMachine) {
                 }
             }
             
-            if (vm.tags != null && vm.tags.isNotEmpty()) {
+            if (!vm.tags.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Tags: ${vm.tags}",
