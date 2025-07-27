@@ -1,6 +1,9 @@
 package com.proxmoxmobile.presentation.screens.dashboard
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -105,7 +108,7 @@ fun DashboardScreen(
                 StatCard(
                     title = "Storage",
                     value = "2.1TB",
-                    icon = Icons.Default.HardDrive,
+                    icon = Icons.Default.Storage,
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate(Screen.Storage.route) }
                 )
@@ -152,7 +155,7 @@ fun DashboardScreen(
                 item {
                     NavigationCard(
                         title = "Storage",
-                        icon = Icons.Default.HardDrive,
+                        icon = Icons.Default.Storage,
                         onClick = { navController.navigate(Screen.Storage.route) }
                     )
                 }

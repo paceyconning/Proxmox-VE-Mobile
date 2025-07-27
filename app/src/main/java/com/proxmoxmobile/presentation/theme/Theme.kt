@@ -45,14 +45,7 @@ private val LightColorScheme = lightColorScheme(
     scrim = Color(0xFF000000),
     inverseSurface = Color(0xFF212121),
     inverseOnSurface = Color(0xFFFAFAFA),
-    inversePrimary = Color(0xFF90CAF9),
-    surfaceDim = Color(0xFFF5F5F5),
-    surfaceBright = Color.White,
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFFAFAFA),
-    surfaceContainer = Color(0xFFF5F5F5),
-    surfaceContainerHigh = Color(0xFFEEEEEE),
-    surfaceContainerHighest = Color(0xFFE0E0E0)
+    inversePrimary = Color(0xFF90CAF9)
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -83,14 +76,7 @@ private val DarkColorScheme = darkColorScheme(
     scrim = Color(0xFF000000),
     inverseSurface = Color(0xFFE0E0E0),
     inverseOnSurface = Color(0xFF121212),
-    inversePrimary = Color(0xFF1976D2),
-    surfaceDim = Color(0xFF121212),
-    surfaceBright = Color(0xFF2D2D2D),
-    surfaceContainerLowest = Color(0xFF0D0D0D),
-    surfaceContainerLow = Color(0xFF1A1A1A),
-    surfaceContainer = Color(0xFF1E1E1E),
-    surfaceContainerHigh = Color(0xFF2D2D2D),
-    surfaceContainerHighest = Color(0xFF424242)
+    inversePrimary = Color(0xFF1976D2)
 )
 
 @Composable

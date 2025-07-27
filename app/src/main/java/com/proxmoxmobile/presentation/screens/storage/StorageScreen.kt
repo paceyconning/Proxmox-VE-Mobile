@@ -40,7 +40,7 @@ fun StorageScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    imageVector = Icons.Default.HardDrive,
+                    imageVector = Icons.Default.Storage,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.primary

@@ -80,8 +80,6 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.work.hilt)
-    ksp(libs.work.hilt)
 
     // Networking
     implementation(libs.retrofit)
@@ -100,8 +98,9 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
-    // Work Manager
-    implementation(libs.work.runtime.ktx)
+    // Material3
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.android)
 
     // Biometric
     implementation(libs.biometric)
