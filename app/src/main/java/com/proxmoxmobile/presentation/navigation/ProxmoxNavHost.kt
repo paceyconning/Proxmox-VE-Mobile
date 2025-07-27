@@ -1,6 +1,7 @@
 package com.proxmoxmobile.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,9 +21,9 @@ import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 
 @Composable
 fun ProxmoxNavHost(
-    navController: NavHostController,
-    viewModel: MainViewModel
+    navController: NavHostController
 ) {
+    val viewModel = remember { MainViewModel() }
     NavHost(
         navController = navController,
         startDestination = Screen.Login.route

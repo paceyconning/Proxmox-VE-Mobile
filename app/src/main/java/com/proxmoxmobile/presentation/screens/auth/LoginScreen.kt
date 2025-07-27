@@ -16,7 +16,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.proxmoxmobile.data.model.ServerConfig
 import com.proxmoxmobile.presentation.navigation.Screen
@@ -26,7 +25,7 @@ import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel
 ) {
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("8006") }

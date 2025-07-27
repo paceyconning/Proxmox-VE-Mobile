@@ -11,14 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.proxmoxmobile.presentation.navigation.ProxmoxNavHost
 import com.proxmoxmobile.presentation.theme.ProxmoxVEMobileTheme
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -42,8 +39,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     ProxmoxNavHost(
-                        navController = navController,
-                        viewModel = hiltViewModel()
+                        navController = navController
                     )
                 }
             }

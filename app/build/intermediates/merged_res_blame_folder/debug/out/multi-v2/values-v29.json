@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-76:/values-v29/values-v29.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-v29/values-v29.xml",
             "map": [
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/71f526c1e41ce2ce3ebd7180c4680117/transformed/jetified-core-splashscreen-1.0.1/res/values-v29/values-v29.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/63abdbc34207d1b768a50207c89d1ee6/transformed/jetified-core-splashscreen-1.0.1/res/values-v29/values-v29.xml",
                     "from": {
                         "startLines": "2,7",
                         "startColumns": "4,4",

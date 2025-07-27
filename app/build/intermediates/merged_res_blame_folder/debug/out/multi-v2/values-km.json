@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-76:/values-km/values-km.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-km/values-km.xml",
             "map": [
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/f32c6fdbd269b8ef32df60e32b17f99a/transformed/material-1.11.0/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/e88a11cf716a20cc26e305bf5c6a2c14/transformed/material-1.11.0/res/values-km/values-km.xml",
                     "from": {
                         "startLines": "2,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -23,24 +23,24 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/349424ed5baac91abfcc0561195c10d9/transformed/jetified-ui-release/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2996af575ae0b7162b81d122d8a08eed/transformed/appcompat-1.6.1/res/values-km/values-km.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,190,270,374,472,560,644,727,812,899,964,1029,1109,1194,1270,1354,1420",
-                        "endColumns": "84,79,103,97,87,83,82,84,86,64,64,79,84,75,83,65,117",
-                        "endOffsets": "185,265,369,467,555,639,722,807,894,959,1024,1104,1189,1265,1349,1415,1533"
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,207,306,416,503,606,727,805,881,972,1065,1157,1251,1351,1444,1539,1633,1724,1815,1898,2002,2106,2206,2315,2424,2533,2695,2793",
+                        "endColumns": "101,98,109,86,102,120,77,75,90,92,91,93,99,92,94,93,90,90,82,103,103,99,108,108,108,161,97,83",
+                        "endOffsets": "202,301,411,498,601,722,800,876,967,1060,1152,1246,1346,1439,1534,1628,1719,1810,1893,1997,2101,2201,2310,2419,2528,2690,2788,2872"
                     },
                     "to": {
-                        "startLines": "52,53,87,89,91,106,107,164,165,166,167,169,170,173,177,178,179",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "4855,4940,8773,8978,9148,10888,10972,15558,15643,15730,15795,15943,16023,16276,16634,16718,16784",
-                        "endColumns": "84,79,103,97,87,83,82,84,86,64,64,79,84,75,83,65,117",
-                        "endOffsets": "4935,5015,8872,9071,9231,10967,11050,15638,15725,15790,15855,16018,16103,16347,16713,16779,16897"
+                        "startLines": "6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,172",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "319,421,520,630,717,820,941,1019,1095,1186,1279,1371,1465,1565,1658,1753,1847,1938,2029,2112,2216,2320,2420,2529,2638,2747,2909,16192",
+                        "endColumns": "101,98,109,86,102,120,77,75,90,92,91,93,99,92,94,93,90,90,82,103,103,99,108,108,108,161,97,83",
+                        "endOffsets": "416,515,625,712,815,936,1014,1090,1181,1274,1366,1460,1560,1653,1748,1842,1933,2024,2107,2211,2315,2415,2524,2633,2742,2904,3002,16271"
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/99658f6251d63fe0010b2a4fefd1642b/transformed/jetified-material3-1.1.2/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2937dd734114fc051e3edcc5e24960eb/transformed/jetified-material3-1.1.2/res/values-km/values-km.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -57,24 +57,7 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2b1ecf47584535d21c63d99604a39830/transformed/jetified-foundation-release/res/values-km/values-km.xml",
-                    "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,146",
-                        "endColumns": "90,91",
-                        "endOffsets": "141,233"
-                    },
-                    "to": {
-                        "startLines": "192,193",
-                        "startColumns": "4,4",
-                        "startOffsets": "18019,18110",
-                        "endColumns": "90,91",
-                        "endOffsets": "18105,18197"
-                    }
-                },
-                {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/1a6cfcea8976fd671bb03bb201db3d69/transformed/core-1.12.0/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2eecff1b2f6947a8faea3b9c482412f3/transformed/core-1.12.0/res/values-km/values-km.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -91,7 +74,7 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/6980d3f1fe51159d5972c7d1cdccfca6/transformed/biometric-1.1.0/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/7db2886484a11d51328f09fe61c9ac30/transformed/biometric-1.1.0/res/values-km/values-km.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
@@ -108,20 +91,37 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2037a6f0d0cb4a89f0e22447b0c55d68/transformed/appcompat-1.6.1/res/values-km/values-km.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/7dbfe7b3df1e34d63949732212d7a0bf/transformed/jetified-foundation-release/res/values-km/values-km.xml",
                     "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,207,306,416,503,606,727,805,881,972,1065,1157,1251,1351,1444,1539,1633,1724,1815,1898,2002,2106,2206,2315,2424,2533,2695,2793",
-                        "endColumns": "101,98,109,86,102,120,77,75,90,92,91,93,99,92,94,93,90,90,82,103,103,99,108,108,108,161,97,83",
-                        "endOffsets": "202,301,411,498,601,722,800,876,967,1060,1152,1246,1346,1439,1534,1628,1719,1810,1893,1997,2101,2201,2310,2419,2528,2690,2788,2872"
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,146",
+                        "endColumns": "90,91",
+                        "endOffsets": "141,233"
                     },
                     "to": {
-                        "startLines": "6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,172",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "319,421,520,630,717,820,941,1019,1095,1186,1279,1371,1465,1565,1658,1753,1847,1938,2029,2112,2216,2320,2420,2529,2638,2747,2909,16192",
-                        "endColumns": "101,98,109,86,102,120,77,75,90,92,91,93,99,92,94,93,90,90,82,103,103,99,108,108,108,161,97,83",
-                        "endOffsets": "416,515,625,712,815,936,1014,1090,1181,1274,1366,1460,1560,1653,1748,1842,1933,2024,2107,2211,2315,2415,2524,2633,2742,2904,3002,16271"
+                        "startLines": "192,193",
+                        "startColumns": "4,4",
+                        "startOffsets": "18019,18110",
+                        "endColumns": "90,91",
+                        "endOffsets": "18105,18197"
+                    }
+                },
+                {
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/3489ac7d15ea2628de6e2f4a06e07acb/transformed/jetified-ui-release/res/values-km/values-km.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,190,270,374,472,560,644,727,812,899,964,1029,1109,1194,1270,1354,1420",
+                        "endColumns": "84,79,103,97,87,83,82,84,86,64,64,79,84,75,83,65,117",
+                        "endOffsets": "185,265,369,467,555,639,722,807,894,959,1024,1104,1189,1265,1349,1415,1533"
+                    },
+                    "to": {
+                        "startLines": "52,53,87,89,91,106,107,164,165,166,167,169,170,173,177,178,179",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "4855,4940,8773,8978,9148,10888,10972,15558,15643,15730,15795,15943,16023,16276,16634,16718,16784",
+                        "endColumns": "84,79,103,97,87,83,82,84,86,64,64,79,84,75,83,65,117",
+                        "endOffsets": "4935,5015,8872,9071,9231,10967,11050,15638,15725,15790,15855,16018,16103,16347,16713,16779,16897"
                     }
                 }
             ]

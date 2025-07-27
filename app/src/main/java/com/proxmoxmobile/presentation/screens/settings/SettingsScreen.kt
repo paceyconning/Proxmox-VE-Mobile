@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.proxmoxmobile.presentation.navigation.Screen
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
@@ -20,7 +19,7 @@ import androidx.compose.foundation.clickable
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel
 ) {
     Scaffold(
         topBar = {

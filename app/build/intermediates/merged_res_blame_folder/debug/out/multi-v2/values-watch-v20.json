@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-76:/values-watch-v20/values-watch-v20.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2037a6f0d0cb4a89f0e22447b0c55d68/transformed/appcompat-1.6.1/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2996af575ae0b7162b81d122d8a08eed/transformed/appcompat-1.6.1/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/71f526c1e41ce2ce3ebd7180c4680117/transformed/jetified-core-splashscreen-1.0.1/res/values-watch-v20/values-watch-v20.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/63abdbc34207d1b768a50207c89d1ee6/transformed/jetified-core-splashscreen-1.0.1/res/values-watch-v20/values-watch-v20.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

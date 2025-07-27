@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-76:/values-v16/values-v16.xml",
+            "outputFile": "com.proxmoxmobile.app-mergeDebugResources-74:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/1a6cfcea8976fd671bb03bb201db3d69/transformed/core-1.12.0/res/values-v16/values-v16.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2eecff1b2f6947a8faea3b9c482412f3/transformed/core-1.12.0/res/values-v16/values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -14,7 +14,7 @@
                     }
                 },
                 {
-                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2037a6f0d0cb4a89f0e22447b0c55d68/transformed/appcompat-1.6.1/res/values-v16/values-v16.xml",
+                    "source": "/home/pacey/.gradle/caches/9.0-milestone-1/transforms/2996af575ae0b7162b81d122d8a08eed/transformed/appcompat-1.6.1/res/values-v16/values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

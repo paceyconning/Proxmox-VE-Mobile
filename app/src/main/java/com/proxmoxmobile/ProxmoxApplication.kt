@@ -1,7 +1,15 @@
 package com.proxmoxmobile
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import com.proxmoxmobile.di.AppContainer
 
-@HiltAndroidApp
-class ProxmoxApplication : Application() 
+class ProxmoxApplication : Application() {
+    
+    lateinit var appContainer: AppContainer
+        private set
+    
+    override fun onCreate() {
+        super.onCreate()
+        appContainer = AppContainer.getInstance(this)
+    }
+} 

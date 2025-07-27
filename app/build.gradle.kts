@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
-    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
 
@@ -43,19 +42,7 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     
-    // Configure Java compilation to avoid JDK image transformation issues
-    tasks.withType<JavaCompile> {
-        enabled = true
-        options.isFork = false
-        options.compilerArgs.add("-Xlint:none")
-    }
-    
 
-    
-    // Disable JDK image transformation tasks
-    tasks.matching { it.name.contains("JdkImageTransform") }.configureEach {
-        enabled = false
-    }
 
     kotlinOptions {
         jvmTarget = "17"
@@ -76,10 +63,7 @@ android {
         }
     }
     
-    // Disable JDK image transformation to avoid jlink issues
-    tasks.withType<JavaCompile> {
-        options.isFork = false
-    }
+
 }
 
 dependencies {
@@ -95,11 +79,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.navigation.hilt)
 
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
 
     // Networking
     implementation(libs.retrofit)

@@ -7,8 +7,7 @@ activityCompose = "1.8.2"
 composeBom = "2024.01.00"
 composeCompiler = "1.5.6"
 navigation = "2.7.6"
-hilt = "2.48"
-hiltNavigation = "1.1.0"
+
 retrofit = "2.9.0"
 okhttp = "4.12.0"
 room = "2.6.1"
@@ -39,15 +38,13 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
-androidx-navigation-hilt = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigation" }
+
 androidx-splash-screen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splash" }
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-material3-android = { group = "com.google.android.material", name = "material", version = "1.11.0" }
 
-# Hilt
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+
 
 # Networking
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -90,7 +87,7 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
 ksp = { id = "com.google.devtools.ksp", version = "1.9.21-1.0.15" }
 
 [bundles]

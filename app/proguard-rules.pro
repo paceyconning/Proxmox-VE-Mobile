@@ -44,9 +44,7 @@
 -keep @androidx.room.Entity class *
 -dontwarn androidx.room.paging.**
 
-# Hilt
--keep,allowobfuscation,allowshrinking class dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper
--keep,allowobfuscation,allowshrinking class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper
+
 
 # Proxmox API models
 -keep class com.proxmoxmobile.data.model.** { *; }
