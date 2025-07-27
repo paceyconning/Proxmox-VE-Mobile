@@ -40,42 +40,6 @@ class MainViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    fun testConnectivity(serverConfig: ServerConfig) {
-        Log.d(TAG, "Testing connectivity to ${serverConfig.host}:${serverConfig.port}")
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-            
-            try {
-                val result = authenticationService.testConnectivity(serverConfig)
-                result.fold(
-                    onSuccess = { message ->
-                        Log.d(TAG, "Connectivity test successful: $message")
-                        _errorMessage.value = "✅ $message"
-                    },
-                    onFailure = { exception ->
-                        Log.e(TAG, "Connectivity test failed", exception)
-                        val errorMsg = when {
-                            exception.message?.contains("timeout", ignoreCase = true) == true -> 
-                                "❌ Connection timeout - check host and port"
-                            exception.message?.contains("unable to resolve", ignoreCase = true) == true -> 
-                                "❌ Cannot reach server - check host address"
-                            exception.message?.contains("certificate", ignoreCase = true) == true -> 
-                                "❌ SSL certificate error - try HTTP or check certificate"
-                            else -> "❌ Connection failed: ${exception.message}"
-                        }
-                        _errorMessage.value = errorMsg
-                    }
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Connectivity test error", e)
-                _errorMessage.value = "❌ Connection error: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     fun authenticate(serverConfig: ServerConfig) {
         Log.d(TAG, "Starting authentication process")
         viewModelScope.launch {

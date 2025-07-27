@@ -100,40 +100,6 @@ class AuthenticationService {
         return retrofit.create(ProxmoxApiService::class.java)
     }
     
-    suspend fun testConnectivity(serverConfig: ServerConfig): Result<String> {
-        return try {
-            Log.d(TAG, "Testing connectivity to ${serverConfig.host}:${serverConfig.port}")
-            
-            val apiService = createApiService(serverConfig)
-            val versionResponse = apiService.getVersion()
-            
-            val version = versionResponse.data["version"] ?: "unknown"
-            Log.d(TAG, "Connectivity test successful. Proxmox version: $version")
-            
-            Result.success(version)
-        } catch (e: retrofit2.HttpException) {
-            when (e.code()) {
-                401 -> {
-                    // 401 means server is reachable but requires authentication - this is expected for connectivity test
-                    Log.d(TAG, "Connectivity test successful - server requires authentication (401)")
-                    Result.success("Server reachable - authentication required")
-                }
-                403 -> {
-                    // 403 means server is reachable but access forbidden
-                    Log.d(TAG, "Connectivity test successful - server accessible but forbidden (403)")
-                    Result.success("Server reachable - access forbidden")
-                }
-                else -> {
-                    Log.e(TAG, "Connectivity test failed with HTTP ${e.code()}", e)
-                    Result.failure(e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Connectivity test failed", e)
-            Result.failure(e)
-        }
-    }
-    
     suspend fun authenticate(serverConfig: ServerConfig): Result<LoginResponse> {
         return try {
             Log.d(TAG, "Starting authentication for ${serverConfig.username}@${serverConfig.host}:${serverConfig.port}")
@@ -149,14 +115,7 @@ class AuthenticationService {
                 throw IllegalArgumentException("Password cannot be empty")
             }
             
-            // Test connectivity first
-            val connectivityResult = testConnectivity(serverConfig)
-            if (connectivityResult.isFailure) {
-                Log.e(TAG, "Connectivity test failed, cannot proceed with authentication")
-                return Result.failure(connectivityResult.exceptionOrNull() ?: Exception("Connectivity test failed"))
-            }
-            
-            Log.d(TAG, "Connectivity test passed, proceeding with authentication")
+            Log.d(TAG, "Creating API service and attempting login")
             
             val apiService = createApiService(serverConfig)
             val loginRequest = LoginRequest(

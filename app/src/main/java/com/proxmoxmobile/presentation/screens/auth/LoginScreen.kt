@@ -83,21 +83,21 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Error message
-        errorMessage?.let { error ->
+        // Status Message
+        errorMessage?.let { message ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (error.contains("successful")) 
+                    containerColor = if (message.contains("✅") || message.contains("successful")) 
                         MaterialTheme.colorScheme.primaryContainer 
                     else 
                         MaterialTheme.colorScheme.errorContainer
                 )
             ) {
                 Text(
-                    text = error,
+                    text = message,
                     modifier = Modifier.padding(16.dp),
-                    color = if (error.contains("successful")) 
+                    color = if (message.contains("✅") || message.contains("successful")) 
                         MaterialTheme.colorScheme.onPrimaryContainer 
                     else 
                         MaterialTheme.colorScheme.onErrorContainer
@@ -251,38 +251,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Test Connection Button
-        OutlinedButton(
-            onClick = {
-                if (host.isNotBlank()) {
-                    val serverConfig = ServerConfig(
-                        host = host,
-                        port = port.toIntOrNull() ?: 8006,
-                        username = "",
-                        password = "",
-                        realm = realm,
-                        useHttps = useHttps
-                    )
-                    viewModel.testConnectivity(serverConfig)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            enabled = host.isNotBlank() && !isLoading
-        ) {
-            if (isLoading) {
-                Text("Testing...")
-            } else {
-                Icon(Icons.Default.NetworkCheck, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Test Connection")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Login Button
+        // Login Button - Direct connection
         Button(
             onClick = {
                 if (host.isNotBlank() && username.isNotBlank() && password.isNotBlank()) {
@@ -307,7 +276,7 @@ fun LoginScreen(
             } else {
                 Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Connect")
+                Text("Connect to Proxmox")
             }
         }
 
