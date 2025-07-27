@@ -7086,3 +7086,4 @@ int styleable ViewStubCompat_android_layout 1
 int styleable ViewStubCompat_android_inflatedId 2
 int xml backup_rules 0x7f130000
 int xml data_extraction_rules 0x7f130001
+int xml network_security_config 0x7f130002

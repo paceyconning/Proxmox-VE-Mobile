@@ -1,7 +1,12 @@
 package com.proxmoxmobile.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.proxmoxmobile.data.api.AuthenticationService
+import com.proxmoxmobile.data.api.ProxmoxApiClient
+import com.proxmoxmobile.data.api.ProxmoxApiService
+import com.proxmoxmobile.data.model.LoginResponse
 import com.proxmoxmobile.data.model.ServerConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,17 +15,112 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
 
+    companion object {
+        private const val TAG = "MainViewModel"
+    }
+
+    private val authenticationService = AuthenticationService()
+    private val apiClient = ProxmoxApiClient()
+
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
     private val _currentServer = MutableStateFlow<ServerConfig?>(null)
     val currentServer: StateFlow<ServerConfig?> = _currentServer.asStateFlow()
 
+    private val _authToken = MutableStateFlow<String?>(null)
+    val authToken: StateFlow<String?> = _authToken.asStateFlow()
+
+    private val _csrfToken = MutableStateFlow<String?>(null)
+    val csrfToken: StateFlow<String?> = _csrfToken.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    fun testConnectivity(serverConfig: ServerConfig) {
+        Log.d(TAG, "Testing connectivity to ${serverConfig.host}:${serverConfig.port}")
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                val result = authenticationService.testConnectivity(serverConfig)
+                result.fold(
+                    onSuccess = { message ->
+                        Log.d(TAG, "Connectivity test successful: $message")
+                        _errorMessage.value = "✅ $message"
+                    },
+                    onFailure = { exception ->
+                        Log.e(TAG, "Connectivity test failed", exception)
+                        val errorMsg = when {
+                            exception.message?.contains("timeout", ignoreCase = true) == true -> 
+                                "❌ Connection timeout - check host and port"
+                            exception.message?.contains("unable to resolve", ignoreCase = true) == true -> 
+                                "❌ Cannot reach server - check host address"
+                            exception.message?.contains("certificate", ignoreCase = true) == true -> 
+                                "❌ SSL certificate error - try HTTP or check certificate"
+                            else -> "❌ Connection failed: ${exception.message}"
+                        }
+                        _errorMessage.value = errorMsg
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Connectivity test error", e)
+                _errorMessage.value = "❌ Connection error: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun authenticate(serverConfig: ServerConfig) {
+        Log.d(TAG, "Starting authentication process")
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                Log.d(TAG, "Calling authentication service")
+                val result = authenticationService.authenticate(serverConfig)
+                result.fold(
+                    onSuccess = { loginResponse ->
+                        Log.d(TAG, "Authentication successful, setting tokens")
+                        _authToken.value = loginResponse.data.ticket
+                        _csrfToken.value = loginResponse.data.csrfToken
+                        _currentServer.value = serverConfig
+                        _isAuthenticated.value = true
+                        _errorMessage.value = "✅ Authentication successful!"
+                        Log.d(TAG, "Authentication completed successfully")
+                    },
+                    onFailure = { exception ->
+                        Log.e(TAG, "Authentication failed", exception)
+                        _errorMessage.value = "❌ ${exception.message}"
+                        _isAuthenticated.value = false
+                        _authToken.value = null
+                        _csrfToken.value = null
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Network error during authentication", e)
+                _errorMessage.value = "❌ Network error: ${e.message}"
+                _isAuthenticated.value = false
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getApiService(): ProxmoxApiService? {
+        val server = _currentServer.value ?: return null
+        val token = _authToken.value
+        val csrf = _csrfToken.value
+        
+        Log.d(TAG, "Creating API service for server: ${server.host}")
+        return apiClient.createApiService(server, token, csrf)
+    }
 
     fun setAuthenticated(authenticated: Boolean) {
         _isAuthenticated.value = authenticated
@@ -43,9 +143,12 @@ class MainViewModel : ViewModel() {
     }
 
     fun logout() {
+        Log.d(TAG, "Logging out user")
         viewModelScope.launch {
             _isAuthenticated.value = false
             _currentServer.value = null
+            _authToken.value = null
+            _csrfToken.value = null
             _errorMessage.value = null
         }
     }

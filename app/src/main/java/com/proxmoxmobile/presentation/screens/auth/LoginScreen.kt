@@ -34,9 +34,22 @@ fun LoginScreen(
     var realm by remember { mutableStateOf("pam") }
     var useHttps by remember { mutableStateOf(true) }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
+    
+    // Collect state from ViewModel
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+
+    // Navigate to dashboard when authenticated
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
+            navController.navigate(Screen.Dashboard.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -70,6 +83,29 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Error message
+        errorMessage?.let { error ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (error.contains("successful")) 
+                        MaterialTheme.colorScheme.primaryContainer 
+                    else 
+                        MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = error,
+                    modifier = Modifier.padding(16.dp),
+                    color = if (error.contains("successful")) 
+                        MaterialTheme.colorScheme.onPrimaryContainer 
+                    else 
+                        MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // Server Configuration Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -98,7 +134,8 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Uri,
                         imeAction = ImeAction.Next
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
 
                 // Port
@@ -113,7 +150,8 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
 
                 // Protocol Toggle
@@ -127,7 +165,8 @@ fun LoginScreen(
                     )
                     Switch(
                         checked = useHttps,
-                        onCheckedChange = { useHttps = it }
+                        onCheckedChange = { useHttps = it },
+                        enabled = !isLoading
                     )
                 }
             }
@@ -163,7 +202,8 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
 
                 // Password
@@ -187,7 +227,8 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
 
                 // Realm
@@ -202,18 +243,49 @@ fun LoginScreen(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isLoading
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Test Connection Button
+        OutlinedButton(
+            onClick = {
+                if (host.isNotBlank()) {
+                    val serverConfig = ServerConfig(
+                        host = host,
+                        port = port.toIntOrNull() ?: 8006,
+                        username = "",
+                        password = "",
+                        realm = realm,
+                        useHttps = useHttps
+                    )
+                    viewModel.testConnectivity(serverConfig)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            enabled = host.isNotBlank() && !isLoading
+        ) {
+            if (isLoading) {
+                Text("Testing...")
+            } else {
+                Icon(Icons.Default.NetworkCheck, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Test Connection")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Login Button
         Button(
             onClick = {
                 if (host.isNotBlank() && username.isNotBlank() && password.isNotBlank()) {
-                    isLoading = true
                     val serverConfig = ServerConfig(
                         host = host,
                         port = port.toIntOrNull() ?: 8006,
@@ -222,11 +294,7 @@ fun LoginScreen(
                         realm = realm,
                         useHttps = useHttps
                     )
-                    viewModel.setCurrentServer(serverConfig)
-                    viewModel.setAuthenticated(true)
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
+                    viewModel.authenticate(serverConfig)
                 }
             },
             modifier = Modifier
@@ -235,10 +303,7 @@ fun LoginScreen(
             enabled = host.isNotBlank() && username.isNotBlank() && password.isNotBlank() && !isLoading
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Text("Connecting...")
             } else {
                 Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -266,7 +331,8 @@ fun LoginScreen(
                     host = "192.168.1.100"
                     port = "8006"
                     useHttps = true
-                }
+                },
+                enabled = !isLoading
             ) {
                 Text("Local Network")
             }
@@ -276,7 +342,8 @@ fun LoginScreen(
                     host = "localhost"
                     port = "8006"
                     useHttps = false
-                }
+                },
+                enabled = !isLoading
             ) {
                 Text("Localhost")
             }

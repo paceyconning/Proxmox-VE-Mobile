@@ -1,3 +1,4 @@
+com.proxmoxmobile.debug:xml/network_security_config = 0x7f130002
 com.proxmoxmobile.debug:styleable/Transform = 0x7f120098
 com.proxmoxmobile.debug:styleable/Tooltip = 0x7f120097
 com.proxmoxmobile.debug:styleable/TabLayout = 0x7f120091

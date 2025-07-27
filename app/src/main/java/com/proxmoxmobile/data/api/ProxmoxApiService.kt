@@ -5,6 +5,10 @@ import retrofit2.http.*
 
 interface ProxmoxApiService {
 
+    // Version check (no auth required)
+    @GET("api2/json/version")
+    suspend fun getVersion(): ApiResponse<Map<String, String>>
+
     // Authentication
     @POST("api2/json/access/ticket")
     suspend fun login(@Body request: LoginRequest): LoginResponse
@@ -178,10 +182,6 @@ interface ProxmoxApiService {
 
     @GET("api2/json/cluster/resources")
     suspend fun getClusterResources(): ApiResponse<List<Map<String, Any>>>
-
-    // Version
-    @GET("api2/json/version")
-    suspend fun getVersion(): ApiResponse<Map<String, String>>
 
     // System
     @GET("api2/json/nodes/{node}/system/version")

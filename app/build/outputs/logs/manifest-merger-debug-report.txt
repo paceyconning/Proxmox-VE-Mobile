@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-49:12
-INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-49:12
-INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-49:12
-INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-49:12
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:2:1-50:12
 MERGED from [com.google.accompanist:accompanist-systemuicontroller:0.32.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/d1cebbc7fc88815d08b133d69caac51c/transformed/jetified-accompanist-systemuicontroller-0.32.0/AndroidManifest.xml:17:1-23:12
 MERGED from [androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:17:1-31:12
 MERGED from [com.google.android.material:material:1.11.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/e88a11cf716a20cc26e305bf5c6a2c14/transformed/material-1.11.0/AndroidManifest.xml:17:1-24:12
@@ -143,8 +143,8 @@ ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml
 	android:name
 		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:18:22-65
 application
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-47:19
-INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-47:19
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-48:19
+INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-48:19
 MERGED from [androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:22:5-29:19
 MERGED from [androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:22:5-29:19
 MERGED from [com.google.android.material:material:1.11.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/e88a11cf716a20cc26e305bf5c6a2c14/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
@@ -171,6 +171,12 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /home/pacey/.gradle/caches/
 MERGED from [androidx.startup:startup-runtime:1.1.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/87d319f7124e00ac83bee27a9f149548/transformed/jetified-startup-runtime-1.1.1/AndroidManifest.xml:25:5-31:19
 	android:extractNativeLibs
 		INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml
+	android:roundIcon
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:27:9-54
+	android:icon
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:25:9-43
+	android:networkSecurityConfig
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:31:9-69
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/2eecff1b2f6947a8faea3b9c482412f3/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
 	android:supportsRtl
@@ -179,12 +185,8 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /home/pacey/.gradle/caches/
 		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:26:9-41
 	android:fullBackupContent
 		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:24:9-54
-	android:roundIcon
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:27:9-54
 	tools:targetApi
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:31:9-29
-	android:icon
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:25:9-43
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:32:9-29
 	android:allowBackup
 		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:22:9-35
 	android:theme
@@ -196,27 +198,27 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /home/pacey/.gradle/caches/
 	android:name
 		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:21:9-43
 activity#com.proxmoxmobile.presentation.MainActivity
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:33:9-43:20
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:34:9-44:20
 	android:label
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:36:13-45
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:37:13-45
 	android:windowSoftInputMode
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:38:13-55
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:39:13-55
 	android:exported
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:35:13-36
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:36:13-36
 	android:theme
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:37:13-57
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:38:13-57
 	android:name
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:34:13-54
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:35:13-54
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:39:13-42:29
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:13-43:29
 action#android.intent.action.MAIN
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:17-69
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:17-69
 	android:name
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:25-66
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:17-77
+ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:42:17-77
 	android:name
-		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:27-74
+		ADDED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:42:27-74
 uses-sdk
 INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml

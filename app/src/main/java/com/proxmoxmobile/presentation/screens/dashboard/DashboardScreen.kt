@@ -1,22 +1,22 @@
 package com.proxmoxmobile.presentation.screens.dashboard
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.proxmoxmobile.data.model.Node
 import com.proxmoxmobile.presentation.navigation.Screen
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,199 +24,307 @@ fun DashboardScreen(
     navController: NavController,
     viewModel: MainViewModel
 ) {
-    val currentServer by viewModel.currentServer.collectAsState()
+    var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Fetch nodes when screen loads
+    LaunchedEffect(Unit) {
+        isLoading = true
+        errorMessage = null
+        
+        try {
+            val apiService = viewModel.getApiService()
+            if (apiService != null) {
+                val response = apiService.getNodes()
+                nodes = response.data
+                Log.d("DashboardScreen", "Loaded ${nodes.size} nodes")
+            } else {
+                errorMessage = "Not authenticated"
+            }
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Failed to load nodes", e)
+            errorMessage = "Failed to load nodes: ${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard") },
+                title = { Text("Proxmox VE Dashboard") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+                    IconButton(onClick = { /* TODO: Settings */ }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = { 
+                        viewModel.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Server Info Card
-            currentServer?.let { server ->
+            // Welcome Section
+            item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Connected Server",
-                            style = MaterialTheme.typography.titleMedium
+                            text = "Welcome to Proxmox VE",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "${server.host}:${server.port}",
+                            text = "Manage your virtual machines, containers, and infrastructure",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "User: ${server.username}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
             }
 
-            // Quick Stats
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatCard(
-                    title = "VMs",
-                    value = "12",
-                    icon = Icons.Default.Computer,
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Screen.VMList.route) }
-                )
-                StatCard(
-                    title = "Containers",
-                    value = "8",
-                    icon = Icons.Default.Storage,
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Screen.ContainerList.route) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatCard(
-                    title = "Storage",
-                    value = "2.1TB",
-                    icon = Icons.Default.Storage,
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Screen.Storage.route) }
-                )
-                StatCard(
-                    title = "Tasks",
-                    value = "3",
-                    icon = Icons.Default.Pending,
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate(Screen.Tasks.route) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Navigation Grid
-            Text(
-                text = "Management",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            // Error Message
+            if (errorMessage != null) {
                 item {
-                    NavigationCard(
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text(
+                            text = errorMessage!!,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+
+            // Loading State
+            if (isLoading) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Loading nodes...")
+                        }
+                    }
+                }
+            }
+
+            // Nodes Section
+            if (nodes.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Nodes (${nodes.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                items(nodes) { node ->
+                    NodeCard(
+                        node = node,
+                        onClick = {
+                            navController.navigate("${Screen.VMList.route}/${node.node}")
+                        }
+                    )
+                }
+            }
+
+            // Quick Actions
+            item {
+                Text(
+                    text = "Quick Actions",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickActionCard(
                         title = "Virtual Machines",
                         icon = Icons.Default.Computer,
-                        onClick = { navController.navigate(Screen.VMList.route) }
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            if (nodes.isNotEmpty()) {
+                                navController.navigate("${Screen.VMList.route}/${nodes.first().node}")
+                            }
+                        }
                     )
-                }
-                item {
-                    NavigationCard(
+                    
+                    QuickActionCard(
                         title = "Containers",
                         icon = Icons.Default.Storage,
-                        onClick = { navController.navigate(Screen.ContainerList.route) }
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            if (nodes.isNotEmpty()) {
+                                navController.navigate("${Screen.ContainerList.route}/${nodes.first().node}")
+                            }
+                        }
                     )
                 }
-                item {
-                    NavigationCard(
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickActionCard(
                         title = "Storage",
                         icon = Icons.Default.Storage,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Storage.route) }
                     )
-                }
-                item {
-                    NavigationCard(
+                    
+                    QuickActionCard(
                         title = "Network",
                         icon = Icons.Default.Wifi,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Network.route) }
                     )
                 }
-                item {
-                    NavigationCard(
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickActionCard(
                         title = "Users",
                         icon = Icons.Default.People,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Users.route) }
                     )
-                }
-                item {
-                    NavigationCard(
+                    
+                    QuickActionCard(
                         title = "Backups",
                         icon = Icons.Default.Backup,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Backups.route) }
                     )
                 }
-                item {
-                    NavigationCard(
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QuickActionCard(
                         title = "Tasks",
-                        icon = Icons.Default.Pending,
+                        icon = Icons.Default.List,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Tasks.route) }
                     )
-                }
-                item {
-                    NavigationCard(
+                    
+                    QuickActionCard(
                         title = "Cluster",
                         icon = Icons.Default.AccountTree,
+                        modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(Screen.Cluster.route) }
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatCard(
+fun NodeCard(
+    node: Node,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Computer,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = node.node,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Status: ${node.status}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "View details",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuickActionCard(
     title: String,
-    value: String,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit
 ) {
     Card(
         modifier = modifier,
         onClick = onClick
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
@@ -227,50 +335,11 @@ fun StatCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NavigationCard(
-    title: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

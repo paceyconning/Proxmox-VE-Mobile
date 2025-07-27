@@ -105,3 +105,4 @@ string virtual_machines
 style Theme.ProxmoxVEMobile
 xml backup_rules
 xml data_extraction_rules
+xml network_security_config

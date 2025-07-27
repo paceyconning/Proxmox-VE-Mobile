@@ -49,7 +49,7 @@
 30-->[androidx.core:core:1.12.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/2eecff1b2f6947a8faea3b9c482412f3/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 31
 32    <application
-32-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-47:19
+32-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:20:5-48:19
 33        android:name="com.proxmoxmobile.ProxmoxApplication"
 33-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:21:9-43
 34        android:allowBackup="true"
@@ -66,138 +66,140 @@
 40-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:25:9-43
 41        android:label="@string/app_name"
 41-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:26:9-41
-42        android:roundIcon="@mipmap/ic_launcher_round"
-42-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:27:9-54
-43        android:supportsRtl="true"
-43-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:28:9-35
-44        android:theme="@style/Theme.ProxmoxVEMobile"
-44-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:29:9-53
-45        android:usesCleartextTraffic="true" >
-45-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:30:9-44
-46        <activity
-46-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:33:9-43:20
-47            android:name="com.proxmoxmobile.presentation.MainActivity"
-47-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:34:13-54
-48            android:exported="true"
-48-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:35:13-36
-49            android:label="@string/app_name"
-49-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:36:13-45
-50            android:theme="@style/Theme.ProxmoxVEMobile"
-50-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:37:13-57
-51            android:windowSoftInputMode="adjustResize" >
-51-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:38:13-55
-52            <intent-filter>
-52-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:39:13-42:29
-53                <action android:name="android.intent.action.MAIN" />
-53-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:17-69
-53-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:25-66
-54
-55                <category android:name="android.intent.category.LAUNCHER" />
-55-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:17-77
-55-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:27-74
-56            </intent-filter>
-57        </activity>
-58
-59        <uses-library
-59-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:23:9-25:40
-60            android:name="androidx.window.extensions"
-60-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:24:13-54
-61            android:required="false" />
-61-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:25:13-37
-62        <uses-library
-62-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:26:9-28:40
-63            android:name="androidx.window.sidecar"
-63-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:27:13-51
-64            android:required="false" />
-64-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:28:13-37
-65
-66        <provider
-66-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
-67            android:name="androidx.startup.InitializationProvider"
-67-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:25:13-67
-68            android:authorities="com.proxmoxmobile.debug.androidx-startup"
-68-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:26:13-68
-69            android:exported="false" >
-69-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:27:13-37
-70            <meta-data
-70-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
-71                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-71-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:30:17-75
-72                android:value="androidx.startup" />
-72-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:31:17-49
-73            <meta-data
-73-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
-74                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-74-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
-75                android:value="androidx.startup" />
-75-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
-76            <meta-data
-76-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
-77                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-77-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
-78                android:value="androidx.startup" />
-78-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
-79        </provider>
-80
-81        <activity
-81-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:23:9-25:39
-82            android:name="androidx.activity.ComponentActivity"
-82-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:24:13-63
-83            android:exported="true" />
-83-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:25:13-36
-84        <activity
-84-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:23:9-25:39
-85            android:name="androidx.compose.ui.tooling.PreviewActivity"
-85-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:24:13-71
-86            android:exported="true" />
-86-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:25:13-36
-87
-88        <service
-88-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
-89            android:name="androidx.room.MultiInstanceInvalidationService"
-89-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
-90            android:directBootAware="true"
-90-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
-91            android:exported="false" />
-91-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
-92
-93        <receiver
-93-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
-94            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-94-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
-95            android:directBootAware="false"
-95-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
-96            android:enabled="true"
-96-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
-97            android:exported="true"
-97-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
-98            android:permission="android.permission.DUMP" >
-98-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
-99            <intent-filter>
-99-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
-100                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
-100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
-101            </intent-filter>
-102            <intent-filter>
-102-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
-103                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-103-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
-103-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
-104            </intent-filter>
-105            <intent-filter>
-105-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
-106                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-106-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
-106-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
-107            </intent-filter>
-108            <intent-filter>
-108-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
-109                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-109-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
-109-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
-110            </intent-filter>
-111        </receiver>
-112    </application>
-113
-114</manifest>
+42        android:networkSecurityConfig="@xml/network_security_config"
+42-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:31:9-69
+43        android:roundIcon="@mipmap/ic_launcher_round"
+43-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:27:9-54
+44        android:supportsRtl="true"
+44-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:28:9-35
+45        android:theme="@style/Theme.ProxmoxVEMobile"
+45-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:29:9-53
+46        android:usesCleartextTraffic="true" >
+46-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:30:9-44
+47        <activity
+47-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:34:9-44:20
+48            android:name="com.proxmoxmobile.presentation.MainActivity"
+48-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:35:13-54
+49            android:exported="true"
+49-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:36:13-36
+50            android:label="@string/app_name"
+50-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:37:13-45
+51            android:theme="@style/Theme.ProxmoxVEMobile"
+51-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:38:13-57
+52            android:windowSoftInputMode="adjustResize" >
+52-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:39:13-55
+53            <intent-filter>
+53-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:40:13-43:29
+54                <action android:name="android.intent.action.MAIN" />
+54-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:17-69
+54-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:41:25-66
+55
+56                <category android:name="android.intent.category.LAUNCHER" />
+56-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:42:17-77
+56-->/home/pacey/Documents/Cursor/Project/app/src/main/AndroidManifest.xml:42:27-74
+57            </intent-filter>
+58        </activity>
+59
+60        <uses-library
+60-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:23:9-25:40
+61            android:name="androidx.window.extensions"
+61-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:24:13-54
+62            android:required="false" />
+62-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:25:13-37
+63        <uses-library
+63-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:26:9-28:40
+64            android:name="androidx.window.sidecar"
+64-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:27:13-51
+65            android:required="false" />
+65-->[androidx.window:window:1.2.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/56eb00c8292b899921f0ea01964855bf/transformed/jetified-window-1.2.0/AndroidManifest.xml:28:13-37
+66
+67        <provider
+67-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+68            android:name="androidx.startup.InitializationProvider"
+68-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:25:13-67
+69            android:authorities="com.proxmoxmobile.debug.androidx-startup"
+69-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:26:13-68
+70            android:exported="false" >
+70-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:27:13-37
+71            <meta-data
+71-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+72                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+72-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:30:17-75
+73                android:value="androidx.startup" />
+73-->[androidx.emoji2:emoji2:1.3.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/053db080874a3d8a485be648718ab88a/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:31:17-49
+74            <meta-data
+74-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+75                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+75-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+76                android:value="androidx.startup" />
+76-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/66611f8fff7bdcaeff0b49e5e6498961/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+77            <meta-data
+77-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+78                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+78-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+79                android:value="androidx.startup" />
+79-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+80        </provider>
+81
+82        <activity
+82-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:23:9-25:39
+83            android:name="androidx.activity.ComponentActivity"
+83-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:24:13-63
+84            android:exported="true" />
+84-->[androidx.compose.ui:ui-test-manifest:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/6d4483601edaf2cea96e013157bc9a85/transformed/jetified-ui-test-manifest-1.6.0/AndroidManifest.xml:25:13-36
+85        <activity
+85-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:23:9-25:39
+86            android:name="androidx.compose.ui.tooling.PreviewActivity"
+86-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:24:13-71
+87            android:exported="true" />
+87-->[androidx.compose.ui:ui-tooling-android:1.6.0] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/a9af13cd7b23448577ebaf9ba19c9950/transformed/jetified-ui-tooling-release/AndroidManifest.xml:25:13-36
+88
+89        <service
+89-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+90            android:name="androidx.room.MultiInstanceInvalidationService"
+90-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+91            android:directBootAware="true"
+91-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+92            android:exported="false" />
+92-->[androidx.room:room-runtime:2.6.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/4d5aafd3886c83419efd695b9a7ed222/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+93
+94        <receiver
+94-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+95            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+95-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+96            android:directBootAware="false"
+96-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+97            android:enabled="true"
+97-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+98            android:exported="true"
+98-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+99            android:permission="android.permission.DUMP" >
+99-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+100            <intent-filter>
+100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+101                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+101-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+101-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+102            </intent-filter>
+103            <intent-filter>
+103-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+104                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+104-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+104-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+105            </intent-filter>
+106            <intent-filter>
+106-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+107                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+107-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+107-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+108            </intent-filter>
+109            <intent-filter>
+109-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+110                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+110-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+110-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/pacey/.gradle/caches/9.0-milestone-1/transforms/78334e2a20a7c43f7b8c01e09f1d840e/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+111            </intent-filter>
+112        </receiver>
+113    </application>
+114
+115</manifest>
