@@ -19,6 +19,10 @@ import com.proxmoxmobile.presentation.navigation.Screen
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 import android.util.Log
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextAlign
+import java.util.Locale
+
+fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,78 +38,85 @@ fun DashboardScreen(
     // Fetch nodes when screen loads
     LaunchedEffect(Unit) {
         try {
-            scope.launch {
-                try {
-                    // Add a longer delay to ensure authentication is complete
-                    kotlinx.coroutines.delay(2000)
-                    
-                    isLoading = true
-                    errorMessage = null
-                    
-                    Log.d("DashboardScreen", "Starting to load nodes")
-                    
-                    // Check if we have a valid API service
-                    val apiService = try {
-                        viewModel.getApiService()
-                    } catch (e: Exception) {
-                        Log.e("DashboardScreen", "Failed to get API service", e)
-                        errorMessage = "Authentication failed - please login again"
-                        return@launch
-                    }
-                    
-                    if (apiService == null) {
-                        Log.e("DashboardScreen", "API service is null")
-                        errorMessage = "Not authenticated - please login again"
-                        return@launch
-                    }
-                    
-                    Log.d("DashboardScreen", "API service available, fetching nodes")
-                    
-                    // Wrap the API call in additional error handling
-                    val response = try {
-                        apiService.getNodes()
-                    } catch (e: Exception) {
-                        Log.e("DashboardScreen", "API call failed", e)
-                        errorMessage = "Failed to connect to server: ${e.message}"
-                        return@launch
-                    }
-                    
-                    Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
-                    
-                    // Safely handle the response data
-                    val nodeList = response.data ?: emptyList()
-                    Log.d("DashboardScreen", "Processed ${nodeList.size} nodes")
-                    
-                    // Validate each node before adding to the list
-                    val validNodes = nodeList.filter { node ->
-                        try {
-                            node.node.isNotBlank() && 
-                            node.status.isNotBlank() &&
-                            node.cpu >= 0 &&
-                            node.mem >= 0 &&
-                            node.uptime >= 0
+            val cached = viewModel.getCachedNodes()
+            if (cached != null && cached.isNotEmpty()) {
+                nodes = cached
+                isLoading = false
+                errorMessage = null
+                Log.d("DashboardScreen", "Loaded nodes from cache: ${cached.size}")
+            } else {
+                scope.launch {
+                    try {
+                        // Add a longer delay to ensure authentication is complete
+                        kotlinx.coroutines.delay(2000)
+                        
+                        isLoading = true
+                        errorMessage = null
+                        
+                        Log.d("DashboardScreen", "Starting to load nodes")
+                        
+                        // Check if we have a valid API service
+                        val apiService = try {
+                            viewModel.getApiService()
                         } catch (e: Exception) {
-                            Log.w("DashboardScreen", "Invalid node data: ${e.message}")
-                            false
+                            Log.e("DashboardScreen", "Failed to get API service", e)
+                            errorMessage = "Authentication failed - please login again"
+                            return@launch
                         }
+                        
+                        if (apiService == null) {
+                            Log.e("DashboardScreen", "API service is null")
+                            errorMessage = "Not authenticated - please login again"
+                            return@launch
+                        }
+                        
+                        Log.d("DashboardScreen", "API service available, fetching nodes")
+                        
+                        // Wrap the API call in additional error handling
+                        val response = try {
+                            apiService.getNodes()
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "API call failed", e)
+                            errorMessage = "Failed to connect to server: "+e.message
+                            return@launch
+                        }
+                        
+                        Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
+                        
+                        // Safely handle the response data
+                        val nodeList = response.data ?: emptyList()
+                        Log.d("DashboardScreen", "Processed ${nodeList.size} nodes")
+                        
+                        // Validate each node before adding to the list
+                        val validNodes = nodeList.filter { node ->
+                            try {
+                                node.node.isNotBlank() && 
+                                node.status.isNotBlank() &&
+                                node.cpu >= 0 &&
+                                node.mem >= 0 &&
+                                node.uptime >= 0
+                            } catch (e: Exception) {
+                                Log.w("DashboardScreen", "Invalid node data: ${e.message}")
+                                false
+                            }
+                        }
+                        nodes = validNodes
+                        viewModel.setCachedNodes(validNodes)
+                        Log.d("DashboardScreen", "Successfully loaded ${nodes.size} valid nodes and cached them")
+                    } catch (e: retrofit2.HttpException) {
+                        Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
+                        when (e.code()) {
+                            401 -> errorMessage = "Authentication required - please login again"
+                            403 -> errorMessage = "Access forbidden - check permissions"
+                            500 -> errorMessage = "Server error - please try again"
+                            else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
+                        }
+                    } catch (e: Exception) {
+                        Log.e("DashboardScreen", "Failed to load nodes", e)
+                        errorMessage = "Failed to load nodes: ${e.message}"
+                    } finally {
+                        isLoading = false
                     }
-                    
-                    nodes = validNodes
-                    Log.d("DashboardScreen", "Successfully loaded ${nodes.size} valid nodes")
-                    
-                } catch (e: retrofit2.HttpException) {
-                    Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
-                    when (e.code()) {
-                        401 -> errorMessage = "Authentication required - please login again"
-                        403 -> errorMessage = "Access forbidden - check permissions"
-                        500 -> errorMessage = "Server error - please try again"
-                        else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
-                    }
-                } catch (e: Exception) {
-                    Log.e("DashboardScreen", "Failed to load nodes", e)
-                    errorMessage = "Failed to load nodes: ${e.message}"
-                } finally {
-                    isLoading = false
                 }
             }
         } catch (e: Exception) {
@@ -155,17 +166,50 @@ fun DashboardScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            contentPadding = PaddingValues(vertical = 20.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // System Status Widget - Only show if we have valid node data
+            // System Status Card (only show if we have nodes)
             if (nodes.isNotEmpty()) {
-                val firstNode = nodes.first()
-                if (isValidNode(firstNode)) {
-                    item {
-                        SystemStatusCard(firstNode)
+                item {
+                    SystemStatusCard(nodes.first())
+                }
+            } else {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 4.dp
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Dashboard Ready",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Data loading temporarily disabled for stability",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -267,37 +311,43 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // LXC Containers
                     QuickActionCard(
                         title = "LXC",
                         subtitle = "Containers",
                         icon = Icons.Default.Storage,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            try {
-                                if (nodes.isNotEmpty()) {
-                                    navController.navigate("${Screen.ContainerList.route}/${nodes.first().node}")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "LXC navigation error", e)
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            if (nodes.isNotEmpty()) {
+                                navController.navigate("${Screen.ContainerList.route}/${nodes.first().node}")
+                            } else {
+                                // Fallback navigation
+                                navController.navigate(Screen.ContainerList.route)
                             }
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to LXC", e)
                         }
-                    )
+                    }
                     
+                    // Virtual Machines
                     QuickActionCard(
                         title = "VM",
                         subtitle = "Machines",
                         icon = Icons.Default.Computer,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            try {
-                                if (nodes.isNotEmpty()) {
-                                    navController.navigate("${Screen.VMList.route}/${nodes.first().node}")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "VM navigation error", e)
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            if (nodes.isNotEmpty()) {
+                                navController.navigate("${Screen.VMList.route}/${nodes.first().node}")
+                            } else {
+                                // Fallback navigation
+                                navController.navigate(Screen.VMList.route)
                             }
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to VM", e)
                         }
-                    )
+                    }
                 }
             }
 
@@ -306,35 +356,38 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Storage
                     QuickActionCard(
                         title = "Storage",
                         subtitle = "Pools",
-                        icon = Icons.Default.Storage,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                if (nodes.isNotEmpty()) {
-                                    navController.navigate("${Screen.Storage.route}/${nodes.first().node}")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Storage navigation error", e)
+                        icon = Icons.Default.Folder,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            if (nodes.isNotEmpty()) {
+                                navController.navigate("${Screen.Storage.route}/${nodes.first().node}")
+                            } else {
+                                // Fallback navigation
+                                navController.navigate(Screen.Storage.route)
                             }
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to Storage", e)
                         }
-                    )
+                    }
                     
+                    // Network
                     QuickActionCard(
                         title = "Network",
                         subtitle = "Interfaces",
                         icon = Icons.Default.Wifi,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                navController.navigate(Screen.Network.route)
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Network navigation error", e)
-                            }
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            navController.navigate(Screen.Network.route)
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to Network", e)
                         }
-                    )
+                    }
                 }
             }
 
@@ -343,68 +396,33 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Users
                     QuickActionCard(
                         title = "Users",
                         subtitle = "Management",
                         icon = Icons.Default.People,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                navController.navigate(Screen.Users.route)
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Users navigation error", e)
-                            }
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            navController.navigate(Screen.Users.route)
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to Users", e)
                         }
-                    )
+                    }
                     
-                    QuickActionCard(
-                        title = "Backups",
-                        subtitle = "Restore",
-                        icon = Icons.Default.Backup,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                navController.navigate(Screen.Backups.route)
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Backups navigation error", e)
-                            }
-                        }
-                    )
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                    // Tasks
                     QuickActionCard(
                         title = "Tasks",
-                        subtitle = "Monitor",
+                        subtitle = "Monitoring",
                         icon = Icons.AutoMirrored.Filled.List,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                navController.navigate(Screen.Tasks.route)
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Tasks navigation error", e)
-                            }
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        try {
+                            navController.navigate(Screen.Tasks.route)
+                        } catch (e: Exception) {
+                            Log.e("DashboardScreen", "Navigation error to Tasks", e)
                         }
-                    )
-                    
-                    QuickActionCard(
-                        title = "Cluster",
-                        subtitle = "Status",
-                        icon = Icons.Default.AccountTree,
-                        modifier = Modifier.weight(1f),
-                        onClick = { 
-                            try {
-                                navController.navigate(Screen.Cluster.route)
-                            } catch (e: Exception) {
-                                Log.e("DashboardScreen", "Cluster navigation error", e)
-                            }
-                        }
-                    )
+                    }
                 }
             }
         }
@@ -451,32 +469,32 @@ fun SystemStatusCard(node: Node) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            
             Spacer(modifier = Modifier.height(20.dp))
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                // Use weight for better scaling
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatusItem(
                     label = "CPU",
-                    value = "${node.cpu.toInt()}%",
+                    value = "${(node.cpu * 100).format(1)}%",
                     icon = Icons.Default.Memory,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
                 )
-                
                 StatusItem(
                     label = "Memory",
-                    value = "${(node.mem / 1024 / 1024 / 1024).toInt()}GB",
+                    value = if (node.mem >= 1024 * 1024 * 1024) "${(node.mem.toDouble() / 1024 / 1024 / 1024).format(1)}GB" else "${(node.mem.toDouble() / 1024 / 1024).format(1)}MB",
                     icon = Icons.Default.Storage,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.weight(1f)
                 )
-                
                 StatusItem(
                     label = "Uptime",
                     value = "${(node.uptime / 3600).toInt()}h",
                     icon = Icons.Default.Schedule,
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -488,10 +506,12 @@ fun StatusItem(
     label: String,
     value: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: androidx.compose.ui.graphics.Color
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
     ) {
         Icon(
             imageVector = icon,

@@ -14,11 +14,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
 import android.content.Context
+import com.proxmoxmobile.data.model.Node
 
 class MainViewModel : ViewModel() {
     companion object {
         private const val TAG = "MainViewModel"
     }
+
+    // In-memory cache for nodes
+    private var cachedNodes: List<Node>? = null
+    fun getCachedNodes(): List<Node>? = cachedNodes
+    fun setCachedNodes(nodes: List<Node>) { cachedNodes = nodes }
 
     private val authenticationService = AuthenticationService()
     private val apiClient = ProxmoxApiClient()

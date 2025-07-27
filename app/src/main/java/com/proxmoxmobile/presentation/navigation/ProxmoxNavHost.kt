@@ -121,5 +121,16 @@ fun ProxmoxNavHost(
                 viewModel = viewModel
             )
         }
+
+        composable(Screen.ContainerDetail.route) { backStackEntry ->
+            val vmid = backStackEntry.arguments?.getString("vmid")?.toIntOrNull()
+            if (vmid != null) {
+                com.proxmoxmobile.presentation.screens.containers.ContainerDetailScreen(
+                    vmid = vmid,
+                    viewModel = viewModel,
+                    navController = navController
+                )
+            }
+        }
     }
 } 
