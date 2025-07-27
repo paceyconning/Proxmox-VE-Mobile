@@ -43,8 +43,17 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     
-    // Disable Java compilation entirely to avoid JDK image transformation issues
+    // Configure Java compilation to avoid JDK image transformation issues
     tasks.withType<JavaCompile> {
+        enabled = true
+        options.isFork = false
+        options.compilerArgs.add("-Xlint:none")
+    }
+    
+
+    
+    // Disable JDK image transformation tasks
+    tasks.matching { it.name.contains("JdkImageTransform") }.configureEach {
         enabled = false
     }
 
