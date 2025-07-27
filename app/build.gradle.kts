@@ -60,6 +60,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    
+    // Disable JDK image transformation to avoid jlink issues
+    tasks.withType<JavaCompile> {
+        options.isFork = false
+    }
 }
 
 dependencies {
