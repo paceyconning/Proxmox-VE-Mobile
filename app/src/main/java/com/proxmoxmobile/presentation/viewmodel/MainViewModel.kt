@@ -78,15 +78,30 @@ class MainViewModel : ViewModel() {
     }
 
     fun getApiService(): ProxmoxApiService? {
-        val server = _currentServer.value ?: return null
-        val token = _authToken.value
-        val csrf = _csrfToken.value
-        
-        Log.d(TAG, "Creating API service for server: ${server.host}")
-        Log.d(TAG, "Auth token available: ${!token.isNullOrBlank()}")
-        Log.d(TAG, "CSRF token available: ${!csrf.isNullOrBlank()}")
-        
-        return apiClient.createApiService(server, token, csrf)
+        try {
+            val server = _currentServer.value ?: return null
+            val token = _authToken.value
+            val csrf = _csrfToken.value
+            
+            Log.d(TAG, "Creating API service for server: ${server.host}")
+            Log.d(TAG, "Auth token available: ${!token.isNullOrBlank()}")
+            Log.d(TAG, "CSRF token available: ${!csrf.isNullOrBlank()}")
+            
+            if (server.host.isBlank()) {
+                Log.e(TAG, "Server host is blank")
+                return null
+            }
+            
+            if (token.isNullOrBlank()) {
+                Log.e(TAG, "Auth token is null or blank")
+                return null
+            }
+            
+            return apiClient.createApiService(server, token, csrf)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating API service", e)
+            return null
+        }
     }
 
     fun setAuthenticated(authenticated: Boolean) {

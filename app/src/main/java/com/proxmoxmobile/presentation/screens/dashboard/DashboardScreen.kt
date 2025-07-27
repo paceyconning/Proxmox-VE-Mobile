@@ -44,8 +44,27 @@ fun DashboardScreen(
                     Log.d("DashboardScreen", "API service available, fetching nodes")
                     val response = apiService.getNodes()
                     Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
-                    nodes = response.data ?: emptyList()
-                    Log.d("DashboardScreen", "Successfully loaded ${nodes.size} nodes")
+                    
+                    // Safely handle the response data
+                    val nodeList = response.data ?: emptyList()
+                    Log.d("DashboardScreen", "Processed ${nodeList.size} nodes")
+                    
+                    // Validate each node before adding to the list
+                    val validNodes = nodeList.filter { node ->
+                        try {
+                            node.node.isNotBlank() && 
+                            node.status.isNotBlank() &&
+                            node.cpu >= 0 &&
+                            node.mem >= 0 &&
+                            node.uptime >= 0
+                        } catch (e: Exception) {
+                            Log.w("DashboardScreen", "Invalid node data: ${e.message}")
+                            false
+                        }
+                    }
+                    
+                    nodes = validNodes
+                    Log.d("DashboardScreen", "Successfully loaded ${nodes.size} valid nodes")
                 } else {
                     Log.e("DashboardScreen", "API service is null")
                     errorMessage = "Not authenticated - please login again"
