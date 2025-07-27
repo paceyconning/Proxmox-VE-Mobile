@@ -20,12 +20,14 @@ import androidx.navigation.NavController
 import com.proxmoxmobile.data.model.ServerConfig
 import com.proxmoxmobile.presentation.navigation.Screen
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    navController: NavController,
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    onNavigateToDashboard: () -> Unit
 ) {
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("8006") }
@@ -33,16 +35,12 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var realm by remember { mutableStateOf("pam") }
     var useHttps by remember { mutableStateOf(true) }
-    var passwordVisible by remember { mutableStateOf(false) }
     var saveCredentials by remember { mutableStateOf(false) }
-
-    val scrollState = rememberScrollState()
     
-    // Collect state from ViewModel
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
-
+    
     // Load saved credentials on first load
     LaunchedEffect(Unit) {
         val savedCredentials = viewModel.loadSavedCredentials()
@@ -56,304 +54,294 @@ fun LoginScreen(
             saveCredentials = true
         }
     }
-
+    
     // Navigate to dashboard when authenticated
     LaunchedEffect(isAuthenticated) {
         if (isAuthenticated) {
-            navController.navigate(Screen.Dashboard.route) {
-                popUpTo(Screen.Login.route) { inclusive = true }
-            }
+            onNavigateToDashboard()
         }
     }
-
-    Column(
+    
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Logo and Title
-        Icon(
-            imageVector = Icons.Default.Storage,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = "Proxmox VE Mobile",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        Text(
-            text = "Connect to your Proxmox server",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Status Message
-        errorMessage?.let { message ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Logo/Title Section
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Icon(
+                imageVector = Icons.Default.Storage,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "Proxmox VE",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            
+            Text(
+                text = "Mobile Management",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Login Form
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (message.contains("✅") || message.contains("successful")) 
-                        MaterialTheme.colorScheme.primaryContainer 
-                    else 
-                        MaterialTheme.colorScheme.errorContainer
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 4.dp
                 )
             ) {
-                Text(
-                    text = message,
-                    modifier = Modifier.padding(16.dp),
-                    color = if (message.contains("✅") || message.contains("successful")) 
-                        MaterialTheme.colorScheme.onPrimaryContainer 
-                    else 
-                        MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // Server Configuration Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Server Configuration",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                // Host
-                OutlinedTextField(
-                    value = host,
-                    onValueChange = { host = it },
-                    label = { Text("Host") },
-                    placeholder = { Text("192.168.1.100") },
-                    leadingIcon = { Icon(Icons.Default.Computer, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-
-                // Port
-                OutlinedTextField(
-                    value = port,
-                    onValueChange = { port = it },
-                    label = { Text("Port") },
-                    placeholder = { Text("8006") },
-                    leadingIcon = { Icon(Icons.Default.Numbers, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-
-                // Protocol Toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Use HTTPS",
-                        modifier = Modifier.weight(1f)
-                    )
-                    Switch(
-                        checked = useHttps,
-                        onCheckedChange = { useHttps = it },
-                        enabled = !isLoading
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Authentication Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Authentication",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                // Username
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    placeholder = { Text("root") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-
-                // Password
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    placeholder = { Text("Enter your password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-
-                // Realm
-                OutlinedTextField(
-                    value = realm,
-                    onValueChange = { realm = it },
-                    label = { Text("Realm") },
-                    placeholder = { Text("pam") },
-                    leadingIcon = { Icon(Icons.Default.Security, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    ),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-
-                // Save Credentials Checkbox
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = saveCredentials,
-                        onCheckedChange = { saveCredentials = it },
-                        enabled = !isLoading
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Save login details (encrypted)",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Login Button - Direct connection
-        Button(
-            onClick = {
-                if (host.isNotBlank() && username.isNotBlank() && password.isNotBlank()) {
-                    val serverConfig = ServerConfig(
-                        host = host,
-                        port = port.toIntOrNull() ?: 8006,
-                        username = username,
-                        password = password,
-                        realm = realm,
-                        useHttps = useHttps
+                        text = "Server Configuration",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
-                    // Save credentials if checkbox is checked (including password)
-                    if (saveCredentials) {
-                        viewModel.saveCredentials(serverConfig, password, true)
+                    // Host and Port Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = host,
+                            onValueChange = { host = it },
+                            label = { Text("Host") },
+                            modifier = Modifier.weight(2f),
+                            enabled = !isLoading,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Uri,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                        
+                        OutlinedTextField(
+                            value = port,
+                            onValueChange = { port = it },
+                            label = { Text("Port") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
                     }
                     
-                    viewModel.authenticate(serverConfig)
+                    // Username and Realm Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = username,
+                            onValueChange = { username = it },
+                            label = { Text("Username") },
+                            modifier = Modifier.weight(2f),
+                            enabled = !isLoading,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                        
+                        OutlinedTextField(
+                            value = realm,
+                            onValueChange = { realm = it },
+                            label = { Text("Realm") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
+                    }
+                    
+                    // Password Field
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                    
+                    // HTTPS Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Use HTTPS",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = useHttps,
+                            onCheckedChange = { useHttps = it },
+                            enabled = !isLoading
+                        )
+                    }
+                    
+                    // Save Credentials Checkbox
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = saveCredentials,
+                            onCheckedChange = { saveCredentials = it },
+                            enabled = !isLoading
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Save login details (encrypted)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    // Error Message
+                    if (errorMessage != null) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = errorMessage!!,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Login Button
+                    Button(
+                        onClick = {
+                            if (host.isNotBlank() && username.isNotBlank() && password.isNotBlank()) {
+                                val serverConfig = ServerConfig(
+                                    host = host,
+                                    port = port.toIntOrNull() ?: 8006,
+                                    username = username,
+                                    password = password,
+                                    realm = realm,
+                                    useHttps = useHttps
+                                )
+                                
+                                // Save credentials if checkbox is checked (including password)
+                                if (saveCredentials) {
+                                    viewModel.saveCredentials(serverConfig, password, true)
+                                }
+                                
+                                viewModel.authenticate(serverConfig)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        enabled = host.isNotBlank() && username.isNotBlank() && password.isNotBlank() && !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Connecting...")
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Connect to Proxmox")
+                        }
+                    }
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            enabled = host.isNotBlank() && username.isNotBlank() && password.isNotBlank() && !isLoading
-        ) {
-            if (isLoading) {
-                Text("Connecting...")
-            } else {
-                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Connect to Proxmox")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Quick Connect Options
-        Text(
-            text = "Quick Connect",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            OutlinedButton(
-                onClick = {
-                    host = "192.168.1.100"
-                    port = "8006"
-                    useHttps = true
-                },
-                enabled = !isLoading
-            ) {
-                Text("Local Network")
             }
             
-            OutlinedButton(
-                onClick = {
-                    host = "localhost"
-                    port = "8006"
-                    useHttps = false
-                },
-                enabled = !isLoading
-            ) {
-                Text("Localhost")
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Footer
+            Text(
+                text = "Secure Proxmox VE Management",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 } 

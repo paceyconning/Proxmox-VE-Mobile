@@ -33,19 +33,43 @@ fun DashboardScreen(
 
     // Fetch nodes when screen loads
     LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                // Add a small delay to ensure authentication is complete
-                kotlinx.coroutines.delay(1000)
-                
-                isLoading = true
-                errorMessage = null
-                
-                Log.d("DashboardScreen", "Starting to load nodes")
-                val apiService = viewModel.getApiService()
-                if (apiService != null) {
+        try {
+            scope.launch {
+                try {
+                    // Add a longer delay to ensure authentication is complete
+                    kotlinx.coroutines.delay(2000)
+                    
+                    isLoading = true
+                    errorMessage = null
+                    
+                    Log.d("DashboardScreen", "Starting to load nodes")
+                    
+                    // Check if we have a valid API service
+                    val apiService = try {
+                        viewModel.getApiService()
+                    } catch (e: Exception) {
+                        Log.e("DashboardScreen", "Failed to get API service", e)
+                        errorMessage = "Authentication failed - please login again"
+                        return@launch
+                    }
+                    
+                    if (apiService == null) {
+                        Log.e("DashboardScreen", "API service is null")
+                        errorMessage = "Not authenticated - please login again"
+                        return@launch
+                    }
+                    
                     Log.d("DashboardScreen", "API service available, fetching nodes")
-                    val response = apiService.getNodes()
+                    
+                    // Wrap the API call in additional error handling
+                    val response = try {
+                        apiService.getNodes()
+                    } catch (e: Exception) {
+                        Log.e("DashboardScreen", "API call failed", e)
+                        errorMessage = "Failed to connect to server: ${e.message}"
+                        return@launch
+                    }
+                    
                     Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
                     
                     // Safely handle the response data
@@ -68,24 +92,26 @@ fun DashboardScreen(
                     
                     nodes = validNodes
                     Log.d("DashboardScreen", "Successfully loaded ${nodes.size} valid nodes")
-                } else {
-                    Log.e("DashboardScreen", "API service is null")
-                    errorMessage = "Not authenticated - please login again"
+                    
+                } catch (e: retrofit2.HttpException) {
+                    Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
+                    when (e.code()) {
+                        401 -> errorMessage = "Authentication required - please login again"
+                        403 -> errorMessage = "Access forbidden - check permissions"
+                        500 -> errorMessage = "Server error - please try again"
+                        else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardScreen", "Failed to load nodes", e)
+                    errorMessage = "Failed to load nodes: ${e.message}"
+                } finally {
+                    isLoading = false
                 }
-            } catch (e: retrofit2.HttpException) {
-                Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
-                when (e.code()) {
-                    401 -> errorMessage = "Authentication required - please login again"
-                    403 -> errorMessage = "Access forbidden - check permissions"
-                    500 -> errorMessage = "Server error - please try again"
-                    else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
-                }
-            } catch (e: Exception) {
-                Log.e("DashboardScreen", "Failed to load nodes", e)
-                errorMessage = "Failed to load nodes: ${e.message}"
-            } finally {
-                isLoading = false
             }
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Critical error in LaunchedEffect", e)
+            errorMessage = "An unexpected error occurred"
+            isLoading = false
         }
     }
 

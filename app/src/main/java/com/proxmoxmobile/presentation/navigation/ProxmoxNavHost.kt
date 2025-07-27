@@ -30,15 +30,12 @@ fun ProxmoxNavHost(
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                navController = navController,
-                viewModel = viewModel
-            )
-        }
-        
-        composable(Screen.ServerList.route) {
-            ServerListScreen(
-                navController = navController,
-                viewModel = viewModel
+                viewModel = viewModel,
+                onNavigateToDashboard = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
             )
         }
         
@@ -49,18 +46,18 @@ fun ProxmoxNavHost(
             )
         }
         
-        composable("${Screen.VMList.route}/{nodeName}") { backStackEntry ->
+        composable("${Screen.ContainerList.route}/{nodeName}") { backStackEntry ->
             val nodeName = backStackEntry.arguments?.getString("nodeName")
-            VMListScreen(
+            ContainerListScreen(
                 navController = navController,
                 viewModel = viewModel,
                 nodeName = nodeName
             )
         }
         
-        composable("${Screen.ContainerList.route}/{nodeName}") { backStackEntry ->
+        composable("${Screen.VMList.route}/{nodeName}") { backStackEntry ->
             val nodeName = backStackEntry.arguments?.getString("nodeName")
-            ContainerListScreen(
+            VMListScreen(
                 navController = navController,
                 viewModel = viewModel,
                 nodeName = nodeName
@@ -90,13 +87,6 @@ fun ProxmoxNavHost(
             )
         }
         
-        composable(Screen.Backups.route) {
-            BackupScreen(
-                navController = navController,
-                viewModel = viewModel
-            )
-        }
-        
         composable(Screen.Tasks.route) {
             TaskScreen(
                 navController = navController,
@@ -104,8 +94,22 @@ fun ProxmoxNavHost(
             )
         }
         
+        composable(Screen.Backups.route) {
+            BackupScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+        
         composable(Screen.Cluster.route) {
             ClusterScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+        
+        composable(Screen.ServerList.route) {
+            ServerListScreen(
                 navController = navController,
                 viewModel = viewModel
             )
