@@ -42,12 +42,15 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    // Configure Java compilation to avoid JDK image transformation issues
+    // Disable Java compilation entirely to avoid JDK image transformation issues
     tasks.withType<JavaCompile> {
-        enabled = true
-        options.isFork = false
-        options.compilerArgs.add("-Xlint:none")
+        enabled = false
     }
+    
+    // Disable JDK image transformation tasks
+    tasks.matching { it.name.contains("JdkImageTransform") }.configureEach { enabled = false }
+    tasks.matching { it.name.contains("androidJdkImage") }.configureEach { enabled = false }
+    tasks.matching { it.name.contains("JdkImage") }.configureEach { enabled = false }
 
     kotlinOptions {
         jvmTarget = "17"
