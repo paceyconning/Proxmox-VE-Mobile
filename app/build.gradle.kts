@@ -41,8 +41,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-    
 
+    // Configure Java compilation to avoid JDK image transformation issues
+    tasks.withType<JavaCompile> {
+        enabled = true
+        options.isFork = false
+        options.compilerArgs.add("-Xlint:none")
+    }
 
     kotlinOptions {
         jvmTarget = "17"
