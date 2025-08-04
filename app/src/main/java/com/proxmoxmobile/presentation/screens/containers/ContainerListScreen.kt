@@ -267,6 +267,16 @@ fun ContainerCard(container: Container, onClick: () -> Unit = {}) {
                     Spacer(Modifier.width(4.dp))
                     Text("Console")
                 }
+                OutlinedButton(
+                    onClick = { /* TODO: Delete container */ },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                    Spacer(Modifier.width(4.dp))
+                    Text("Delete")
+                }
             }
         }
     }

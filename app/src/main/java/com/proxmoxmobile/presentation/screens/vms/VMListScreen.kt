@@ -277,6 +277,45 @@ fun VMCard(vm: VirtualMachine) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            
+            // Action buttons
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { /* TODO: Start VM */ },
+                    modifier = Modifier.weight(1f),
+                    enabled = vm.status != "running"
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Start")
+                }
+                
+                OutlinedButton(
+                    onClick = { /* TODO: Stop VM */ },
+                    modifier = Modifier.weight(1f),
+                    enabled = vm.status == "running"
+                ) {
+                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Stop")
+                }
+                
+                OutlinedButton(
+                    onClick = { /* TODO: Delete VM */ },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
+                }
+            }
         }
     }
 } 

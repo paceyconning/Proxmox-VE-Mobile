@@ -13,9 +13,13 @@ A modern Android application for managing Proxmox Virtual Environment servers fr
 - **Navigation**: Bulletproof navigation system with proper state management
 - **Manual Dependency Injection**: Clean, efficient dependency management
 - **JDK Compatibility**: Fixed all Java/Kotlin version compatibility issues
-- **LXC Containers**: Full LXC container management with list view
-- **Virtual Machines**: Complete VM management with list view
+- **LXC Containers**: Full LXC container management with list view and action buttons
+- **Virtual Machines**: Complete VM management with list view and action buttons
 - **Storage Management**: Storage pool monitoring and management
+- **Network Management**: Network interface monitoring and status display
+- **User Management**: User listing and details with status indicators
+- **Task Monitoring**: Real-time task tracking with status and timing information
+- **Backup Management**: Backup listing and details with format indicators
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Data Validation**: Robust data validation and filtering
 - **Secure Storage**: AES256 encrypted credential storage using Android Keystore
@@ -23,11 +27,11 @@ A modern Android application for managing Proxmox Virtual Environment servers fr
 - **Crash Prevention**: Fixed all dashboard and navigation crashes
 
 ### 🔄 In Development
-- Network Management - View network interfaces
-- User Management - Manage users and permissions  
-- Task Monitoring - View running tasks
-- Backup Management - Manage backups
-- Advanced Features - VM/container actions (start/stop/delete)
+- Advanced Features - VM/container actions (start/stop/delete) - UI ready, API integration needed
+- Network Interface Actions - Configure network interfaces
+- User Management Actions - Create/edit/delete users
+- Task Management Actions - Delete tasks and view details
+- Backup Management Actions - Download/restore/delete backups
 
 ## 🛠 Tech Stack
 
@@ -46,19 +50,23 @@ A modern Android application for managing Proxmox Virtual Environment servers fr
 ### Working Features
 - 🔐 **Secure Authentication**: Login with encrypted credential storage
 - 📊 **Dashboard**: System status monitoring (CPU, RAM, Uptime)
-- 🐳 **LXC Containers**: View and manage LXC containers
-- 🖥️ **Virtual Machines**: View and manage VMs
+- 🐳 **LXC Containers**: View and manage LXC containers with action buttons
+- 🖥️ **Virtual Machines**: View and manage VMs with action buttons
 - 💾 **Storage Management**: Monitor storage pools
+- 🌐 **Network Management**: View network interfaces and their status
+- 👥 **User Management**: View users and their details
+- 📋 **Task Monitoring**: View running tasks and their status
+- 💿 **Backup Management**: View backups and their details
 - 🎨 **OLED Dark Mode**: Beautiful dark theme optimized for OLED screens
 - 💾 **Login Persistence**: Auto-fill login details securely
 - 🛡️ **Crash Prevention**: Robust error handling and validation
 
 ### In Development
-- 🌐 **Network Management**: Network interface monitoring
-- 👥 **User Management**: User and permission management
-- 📋 **Task Monitoring**: Real-time task tracking
-- 💿 **Backup Management**: Backup creation and restoration
-- ⚡ **Advanced Actions**: Start/stop/delete operations for VMs and containers
+- ⚡ **Advanced Actions**: Start/stop/delete operations for VMs and containers (UI ready, API integration needed)
+- 🔧 **Network Interface Actions**: Configure network interfaces
+- 👥 **User Management Actions**: Create/edit/delete users
+- 📋 **Task Management Actions**: Delete tasks and view details
+- 💿 **Backup Management Actions**: Download/restore/delete backups
 
 ## 📁 Project Structure
 
