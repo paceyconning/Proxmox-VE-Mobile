@@ -47,7 +47,25 @@ class MainViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _showConfirmationDialog = MutableStateFlow<ConfirmationDialog?>(null)
+    val showConfirmationDialog: StateFlow<ConfirmationDialog?> = _showConfirmationDialog.asStateFlow()
+
     private var secureStorage: SecureStorage? = null
+
+    data class ConfirmationDialog(
+        val title: String,
+        val message: String,
+        val onConfirm: () -> Unit,
+        val onDismiss: () -> Unit = {}
+    )
+
+    fun showConfirmationDialog(dialog: ConfirmationDialog) {
+        _showConfirmationDialog.value = dialog
+    }
+
+    fun hideConfirmationDialog() {
+        _showConfirmationDialog.value = null
+    }
 
     fun initialize(context: Context) {
         secureStorage = SecureStorage(context)
@@ -169,6 +187,209 @@ class MainViewModel : ViewModel() {
             _authToken.value = null
             _csrfToken.value = null
             _errorMessage.value = null
+        }
+    }
+
+    // Container Actions
+    fun startContainer(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.performContainerAction(node, vmid, "start")
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to start container")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting container", e)
+                onError("Error starting container: ${e.message}")
+            }
+        }
+    }
+
+    fun stopContainer(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.performContainerAction(node, vmid, "stop")
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to stop container")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping container", e)
+                onError("Error stopping container: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteContainer(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.deleteContainer(node, vmid)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to delete container")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting container", e)
+                onError("Error deleting container: ${e.message}")
+            }
+        }
+    }
+
+    // VM Actions
+    fun startVM(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.performVMAction(node, vmid, "start")
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to start VM")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting VM", e)
+                onError("Error starting VM: ${e.message}")
+            }
+        }
+    }
+
+    fun stopVM(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.performVMAction(node, vmid, "stop")
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to stop VM")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping VM", e)
+                onError("Error stopping VM: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteVM(node: String, vmid: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.deleteVM(node, vmid)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to delete VM")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting VM", e)
+                onError("Error deleting VM: ${e.message}")
+            }
+        }
+    }
+
+    // Task Actions
+    fun deleteTask(node: String, upid: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.deleteTask(node, upid)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to delete task")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting task", e)
+                onError("Error deleting task: ${e.message}")
+            }
+        }
+    }
+
+    // User Actions
+    fun deleteUser(userid: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.deleteUser(userid)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to delete user")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting user", e)
+                onError("Error deleting user: ${e.message}")
+            }
+        }
+    }
+
+    // Backup Actions
+    fun deleteBackup(node: String, storage: String, volume: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val apiService = getApiService()
+                if (apiService == null) {
+                    onError("Not authenticated")
+                    return@launch
+                }
+                
+                val response = apiService.deleteBackup(node, storage, volume)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    onError("Failed to delete backup")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting backup", e)
+                onError("Error deleting backup: ${e.message}")
+            }
         }
     }
 } 
