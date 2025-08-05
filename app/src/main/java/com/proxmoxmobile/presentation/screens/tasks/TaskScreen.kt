@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,13 +18,16 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.proxmoxmobile.data.model.Task
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
-import android.util.Log
 import kotlinx.coroutines.launch
+import android.util.Log
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.SnackbarHostState
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,10 +41,46 @@ fun TaskScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedNode by remember { mutableStateOf<String?>(null) }
+    var lastRefreshTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var actionInProgress by remember { mutableStateOf<String?>(null) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     // Get cached nodes to determine which node to query
     val cachedNodes = viewModel.getCachedNodes()
+
+    // Real-time data refresh
+    LaunchedEffect(selectedNode) {
+        while (selectedNode != null) {
+            delay(10000) // Refresh every 10 seconds for tasks
+            if (viewModel.isAuthenticated.value) {
+                scope.launch {
+                    refreshTasks(viewModel, selectedNode!!, { newTasks ->
+                        tasks = newTasks
+                        lastRefreshTime = System.currentTimeMillis()
+                    }, { error ->
+                        errorMessage = error
+                    })
+                }
+            }
+        }
+    }
+
+    // Load tasks function
+    fun loadTasks() {
+        if (selectedNode != null) {
+            scope.launch {
+                refreshTasks(viewModel, selectedNode!!, { newTasks ->
+                    tasks = newTasks
+                    lastRefreshTime = System.currentTimeMillis()
+                    errorMessage = null
+                }, { error ->
+                    errorMessage = error
+                })
+            }
+        }
+    }
 
     // Fetch tasks when screen loads
     LaunchedEffect(Unit) {
@@ -76,45 +117,12 @@ fun TaskScreen(
                     selectedNode = nodes.first().node
                     Log.d("TaskScreen", "Using node: $selectedNode")
                     
-                    // Fetch tasks
-                    val response = try {
-                        apiService.getTasks(selectedNode!!, limit = 100)
-                    } catch (e: Exception) {
-                        Log.e("TaskScreen", "API call failed", e)
-                        errorMessage = "Failed to connect to server: ${e.message}"
-                        return@launch
-                    }
+                    // Load tasks for the selected node
+                    loadTasks()
                     
-                    Log.d("TaskScreen", "Tasks response received: ${response.data?.size ?: 0} tasks")
-                    
-                    // Safely handle the response data
-                    val taskList = response.data ?: emptyList()
-                    Log.d("TaskScreen", "Processed ${taskList.size} tasks")
-                    
-                    // Validate each task before adding to the list
-                    val validTasks = taskList.filter { task ->
-                        try {
-                            task.id.isNotBlank() && 
-                            task.node.isNotBlank() &&
-                            task.type.isNotBlank()
-                        } catch (e: Exception) {
-                            Log.w("TaskScreen", "Invalid task data: ${e.message}")
-                            false
-                        }
-                    }
-                    tasks = validTasks
-                    Log.d("TaskScreen", "Successfully loaded ${tasks.size} valid tasks")
-                } catch (e: retrofit2.HttpException) {
-                    Log.e("TaskScreen", "HTTP error loading tasks: ${e.code()}", e)
-                    when (e.code()) {
-                        401 -> errorMessage = "Authentication required - please login again"
-                        403 -> errorMessage = "Access forbidden - check permissions"
-                        500 -> errorMessage = "Server error - please try again"
-                        else -> errorMessage = "Failed to load tasks: HTTP ${e.code()}"
-                    }
                 } catch (e: Exception) {
-                    Log.e("TaskScreen", "Failed to load tasks", e)
-                    errorMessage = "Failed to load tasks: ${e.message}"
+                    Log.e("TaskScreen", "Critical error in LaunchedEffect", e)
+                    errorMessage = "An unexpected error occurred"
                 } finally {
                     isLoading = false
                 }
@@ -131,7 +139,7 @@ fun TaskScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        "Task Monitoring",
+                        "Task Monitor",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -142,24 +150,16 @@ fun TaskScreen(
                     }
                 },
                 actions = {
-                    if (selectedNode != null) {
-                        Text(
-                            text = "Node: $selectedNode",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(end = 16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    IconButton(onClick = { /* TODO: Settings */ }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                    IconButton(onClick = {
-                        // Refresh tasks
-                        scope.launch {
-                            tasks = emptyList()
-                            errorMessage = null
-                            isLoading = true
-                            // This will trigger LaunchedEffect again
+                    IconButton(onClick = { 
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
                         }
                     }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -169,132 +169,145 @@ fun TaskScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Last refresh indicator
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Loading tasks...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = "Last updated: ${formatTimeAgo(lastRefreshTime)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
                 }
             }
-            errorMessage != null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+            // Node selector
+            if (cachedNodes != null && cachedNodes.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Error",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = errorMessage!!,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                // Retry loading
-                                scope.launch {
-                                    // Reset state and retry
-                                    tasks = emptyList()
-                                    errorMessage = null
-                                    isLoading = true
-                                    // This will trigger LaunchedEffect again
-                                }
-                            }
+                        Column(
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Retry")
+                            Text(
+                                text = "Selected Node: ${selectedNode ?: "None"}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Monitoring tasks on this node",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
             }
-            tasks.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+            // Error message
+            if (!errorMessage.isNullOrBlank()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Pending,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No Tasks Found",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "No tasks are currently running on this node",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                     }
                 }
             }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "Tasks (${tasks.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
+
+            // Loading indicator
+            if (isLoading) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
-                    }
-                    
-                    items(tasks) { task ->
-                        TaskCard(task = task)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Loading tasks...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
+            }
+
+            // Task statistics
+            if (tasks.isNotEmpty()) {
+                item {
+                    TaskStatisticsCard(tasks)
+                }
+            }
+
+            // Task list
+            items(tasks) { task ->
+                TaskCard(
+                    task = task,
+                    actionInProgress = actionInProgress == task.id,
+                    onDelete = {
+                        actionInProgress = task.id
+                        viewModel.deleteTask(selectedNode!!, task.id,
+                            onSuccess = {
+                                actionInProgress = null
+                                snackbarMessage = "✅ Task deleted successfully"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                loadTasks() // Refresh the list
+                            },
+                            onError = { error ->
+                                actionInProgress = null
+                                snackbarMessage = "❌ Failed to delete task: $error"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                            }
+                        )
+                    }
+                )
             }
         }
     }
@@ -302,71 +315,80 @@ fun TaskScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskCard(task: Task) {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+fun TaskCard(
+    task: Task,
+    actionInProgress: Boolean = false,
+    onDelete: () -> Unit = {}
+) {
+    val dateFormat = SimpleDateFormat("MMM dd, HH:mm:ss", Locale.getDefault())
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header row with task ID and status
+            // Header with task type and status
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Icon(
+                    imageVector = when (task.type) {
+                        "qmstart" -> Icons.Default.PlayArrow
+                        "qmstop" -> Icons.Default.Stop
+                        "qmrestart" -> Icons.Default.Refresh
+                        "qmclone" -> Icons.Default.ContentCopy
+                        "qmbackup" -> Icons.Default.Backup
+                        "qmrestore" -> Icons.Default.Restore
+                        "qmdelete" -> Icons.Default.Delete
+                        "lxcstart" -> Icons.Default.PlayArrow
+                        "lxcstop" -> Icons.Default.Stop
+                        "lxcclone" -> Icons.Default.ContentCopy
+                        "lxcbackup" -> Icons.Default.Backup
+                        "lxcdelete" -> Icons.Default.Delete
+                        else -> Icons.Default.Pending
+                    },
+                    contentDescription = null,
+                    tint = when (task.status) {
+                        "running" -> Color.Green
+                        "stopped" -> Color.Red
+                        "finished" -> Color.Blue
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = task.id,
+                        text = task.type.uppercase(),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = task.type,
-                        style = MaterialTheme.typography.bodySmall,
+                        text = "Status: ${task.status.uppercase()}",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
                 // Status indicator
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(
-                                color = when (task.status.lowercase()) {
-                                    "running" -> Color.Blue
-                                    "stopped" -> Color.Gray
-                                    "failed" -> Color.Red
-                                    "success" -> Color.Green
-                                    else -> Color.Yellow
-                                },
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                    )
-                    Text(
-                        text = task.status,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when (task.status.lowercase()) {
-                            "running" -> Color.Blue
-                            "stopped" -> Color.Gray
-                            "failed" -> Color.Red
-                            "success" -> Color.Green
-                            else -> Color.Yellow
-                        }
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(
+                            color = when (task.status) {
+                                "running" -> Color.Green
+                                "stopped" -> Color.Red
+                                "finished" -> Color.Blue
+                                else -> Color.Gray
+                            },
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -498,29 +520,161 @@ fun TaskCard(task: Task) {
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.End
             ) {
                 OutlinedButton(
-                    onClick = { /* TODO: View task details */ },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Details")
-                }
-                
-                OutlinedButton(
-                    onClick = { /* TODO: Delete task */ },
-                    modifier = Modifier.weight(1f),
+                    onClick = onDelete,
+                    enabled = !actionInProgress,
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    if (actionInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Delete")
                 }
             }
         }
+    }
+}
+
+@Composable
+fun TaskStatisticsCard(tasks: List<Task>) {
+    val runningTasks = tasks.count { it.status == "running" }
+    val finishedTasks = tasks.count { it.status == "finished" }
+    val stoppedTasks = tasks.count { it.status == "stopped" }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Task Statistics",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                TaskStatItem(
+                    label = "Running",
+                    value = runningTasks.toString(),
+                    color = Color.Green
+                )
+                TaskStatItem(
+                    label = "Finished",
+                    value = finishedTasks.toString(),
+                    color = Color.Blue
+                )
+                TaskStatItem(
+                    label = "Stopped",
+                    value = stoppedTasks.toString(),
+                    color = Color.Red
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskStatItem(
+    label: String,
+    value: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+        )
+    }
+}
+
+// Helper function to refresh tasks
+suspend fun refreshTasks(
+    viewModel: MainViewModel,
+    nodeName: String,
+    onSuccess: (List<Task>) -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        Log.d("TaskScreen", "Refreshing tasks for node: $nodeName")
+        val apiService = viewModel.getApiService()
+        
+        if (apiService == null) {
+            onError("Not authenticated - please login again")
+            return
+        }
+        
+        val response = apiService.getTasks(nodeName, limit = 100)
+        Log.d("TaskScreen", "Tasks response received: ${response.data?.size ?: 0} tasks")
+        
+        // Safely handle the response data
+        val taskList = response.data ?: emptyList()
+        Log.d("TaskScreen", "Processed ${taskList.size} tasks")
+        
+        // Validate each task before adding to the list
+        val validTasks = taskList.filter { task ->
+            try {
+                task.id.isNotBlank() && 
+                task.node.isNotBlank() &&
+                task.type.isNotBlank()
+            } catch (e: Exception) {
+                Log.w("TaskScreen", "Invalid task data: ${e.message}")
+                false
+            }
+        }
+        
+        onSuccess(validTasks)
+        Log.d("TaskScreen", "Successfully refreshed ${validTasks.size} valid tasks")
+        
+    } catch (e: retrofit2.HttpException) {
+        Log.e("TaskScreen", "HTTP error refreshing tasks: ${e.code()}", e)
+        when (e.code()) {
+            401 -> onError("Authentication required - please login again")
+            403 -> onError("Access forbidden - check permissions")
+            500 -> onError("Server error - please try again")
+            else -> onError("Failed to refresh tasks: HTTP ${e.code()}")
+        }
+    } catch (e: Exception) {
+        Log.e("TaskScreen", "Failed to refresh tasks", e)
+        onError("Failed to refresh tasks: ${e.message}")
+    }
+}
+
+// Helper function to format time ago
+fun formatTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    
+    return when {
+        diff < 60000 -> "Just now"
+        diff < 3600000 -> "${diff / 60000}m ago"
+        diff < 86400000 -> "${diff / 3600000}h ago"
+        else -> "${diff / 86400000}d ago"
     }
 } 

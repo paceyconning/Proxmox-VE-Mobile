@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,8 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.SnackbarHostState
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,62 +37,49 @@ fun VMListScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showSnackbar by remember { mutableStateOf(false) }
+    var lastRefreshTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var actionInProgress by remember { mutableStateOf<Pair<String, Int>?>(null) } // action, vmid
     val snackbarHostState = remember { SnackbarHostState() }
     
     val scope = rememberCoroutineScope()
     val apiService = viewModel.getApiService()
 
+    // Real-time data refresh
+    LaunchedEffect(nodeName) {
+        while (!nodeName.isNullOrBlank()) {
+            delay(15000) // Refresh every 15 seconds for VMs
+            if (viewModel.isAuthenticated.value && apiService != null) {
+                scope.launch {
+                    refreshVMs(apiService, nodeName, { newVMs ->
+                        vms = newVMs
+                        lastRefreshTime = System.currentTimeMillis()
+                    }, { error ->
+                        errorMessage = error
+                    })
+                }
+            }
+        }
+    }
+
+    // Load VMs function
+    fun loadVMs() {
+        if (apiService != null && !nodeName.isNullOrBlank()) {
+            scope.launch {
+                refreshVMs(apiService, nodeName, { newVMs ->
+                    vms = newVMs
+                    lastRefreshTime = System.currentTimeMillis()
+                    errorMessage = null
+                }, { error ->
+                    errorMessage = error
+                })
+            }
+        }
+    }
+
     // Load VMs when the screen is first displayed
     LaunchedEffect(apiService, nodeName) {
         if (apiService != null && !nodeName.isNullOrBlank()) {
-            scope.launch {
-                try {
-                    isLoading = true
-                    errorMessage = null
-                    
-                    Log.d("VMListScreen", "Loading VMs for node: $nodeName")
-                    val response = apiService.getVirtualMachines(nodeName)
-                    Log.d("VMListScreen", "API response received: ${response.data?.size ?: 0} VMs")
-                    
-                    // Safely handle the response data
-                    val vmList = response.data ?: emptyList()
-                    Log.d("VMListScreen", "Processed ${vmList.size} VMs")
-                    
-                    // Validate each VM before adding to the list
-                    val validVMs = vmList.filter { vm ->
-                        try {
-                            vm.vmid > 0 && 
-                            vm.name.isNotBlank() && 
-                            vm.status.isNotBlank() &&
-                            vm.cpu >= 0 &&
-                            vm.mem >= 0 &&
-                            vm.maxmem >= 0 &&
-                            vm.uptime >= 0
-                        } catch (e: Exception) {
-                            Log.w("VMListScreen", "Invalid VM data: ${e.message}")
-                            false
-                        }
-                    }
-                    
-                    vms = validVMs
-                    Log.d("VMListScreen", "Successfully loaded ${vms.size} valid VMs")
-                    
-                } catch (e: retrofit2.HttpException) {
-                    Log.e("VMListScreen", "HTTP error loading VMs: ${e.code()}", e)
-                    when (e.code()) {
-                        401 -> errorMessage = "Authentication required - please login again"
-                        403 -> errorMessage = "Access forbidden - check permissions"
-                        404 -> errorMessage = "Node not found: $nodeName"
-                        500 -> errorMessage = "Server error - please try again"
-                        else -> errorMessage = "Failed to load VMs: HTTP ${e.code()}"
-                    }
-                } catch (e: Exception) {
-                    Log.e("VMListScreen", "Failed to load VMs", e)
-                    errorMessage = "Failed to load VMs: ${e.message}"
-                } finally {
-                    isLoading = false
-                }
-            }
+            loadVMs()
         } else {
             errorMessage = "Invalid node name or API service not available"
         }
@@ -98,121 +88,188 @@ fun VMListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Virtual Machines - ${nodeName ?: "Unknown"}") },
+                title = { 
+                    Text(
+                        "Virtual Machines",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Settings */ }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = { 
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
-                Snackbar(
-                    snackbarData = snackbarData,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    ) { padding ->
-        Column(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Error message
-            errorMessage?.let { error ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+            // Last refresh indicator
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        text = "Last updated: ${formatTimeAgo(lastRefreshTime)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
                 }
             }
 
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (vms.isEmpty() && errorMessage == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+            // Error message
+            if (!errorMessage.isNullOrBlank()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Computer,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No Virtual Machines Found",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "This node doesn't have any VMs configured",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "Virtual Machines (${vms.size})",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                    }
+            }
 
-                    items(vms) { vm ->
-                        VMCard(
-                            vm = vm,
-                            viewModel = viewModel,
-                            node = nodeName ?: "pve",
-                            onActionSuccess = { message ->
-                                snackbarMessage = message
-                                showSnackbar = true
+            // Loading indicator
+            if (isLoading) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Loading virtual machines...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // VM list
+            items(vms) { vm ->
+                VMCard(
+                    vm = vm,
+                    actionInProgress = actionInProgress?.second == vm.vmid,
+                    onStart = {
+                        actionInProgress = "start" to vm.vmid
+                        viewModel.startVM(nodeName!!, vm.vmid,
+                            onSuccess = {
+                                actionInProgress = null
+                                snackbarMessage = "✅ VM ${vm.name} started successfully"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                loadVMs() // Refresh the list
                             },
-                            onActionError = { message ->
-                                snackbarMessage = message
-                                showSnackbar = true
+                            onError = { error ->
+                                actionInProgress = null
+                                snackbarMessage = "❌ Failed to start VM: $error"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
                             }
                         )
+                    },
+                    onStop = {
+                        actionInProgress = "stop" to vm.vmid
+                        viewModel.stopVM(nodeName!!, vm.vmid,
+                            onSuccess = {
+                                actionInProgress = null
+                                snackbarMessage = "✅ VM ${vm.name} stopped successfully"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                loadVMs() // Refresh the list
+                            },
+                            onError = { error ->
+                                actionInProgress = null
+                                snackbarMessage = "❌ Failed to stop VM: $error"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                            }
+                        )
+                    },
+                    onDelete = {
+                        viewModel.showConfirmationDialog(
+                            MainViewModel.ConfirmationDialog(
+                                title = "Delete VM",
+                                message = "Are you sure you want to delete VM '${vm.name}' (ID: ${vm.vmid})? This action cannot be undone.",
+                                onConfirm = {
+                                    viewModel.hideConfirmationDialog()
+                                    actionInProgress = "delete" to vm.vmid
+                                    viewModel.deleteVM(nodeName!!, vm.vmid,
+                                        onSuccess = {
+                                            actionInProgress = null
+                                            snackbarMessage = "✅ VM ${vm.name} deleted successfully"
+                                            scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                            loadVMs() // Refresh the list
+                                        },
+                                        onError = { error ->
+                                            actionInProgress = null
+                                            snackbarMessage = "❌ Failed to delete VM: $error"
+                                            scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                        }
+                                    )
+                                },
+                                onDismiss = {
+                                    viewModel.hideConfirmationDialog()
+                                }
+                            )
+                        )
                     }
-                }
+                )
             }
-        }
-    }
-    
-    // Show snackbar when there's a message
-    LaunchedEffect(showSnackbar, snackbarMessage) {
-        if (showSnackbar && snackbarMessage != null) {
-            snackbarHostState.showSnackbar(snackbarMessage!!)
-            showSnackbar = false
-            snackbarMessage = null
         }
     }
 }
@@ -221,105 +278,84 @@ fun VMListScreen(
 @Composable
 fun VMCard(
     vm: VirtualMachine,
-    viewModel: MainViewModel,
-    node: String = "pve", // Default node, should be passed from parent
-    onActionSuccess: (String) -> Unit = {},
-    onActionError: (String) -> Unit = {},
-    onClick: () -> Unit = {}
+    actionInProgress: Boolean = false,
+    onStart: () -> Unit = {},
+    onStop: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
-    var isActionInProgress by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Header with VM name and status
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    imageVector = Icons.Default.Computer,
+                    contentDescription = null,
+                    tint = when (vm.status) {
+                        "running" -> Color.Green
+                        "stopped" -> Color.Red
+                        "paused" -> Color.Yellow
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = vm.name.ifBlank { "Unknown VM" },
+                        text = vm.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "VMID: ${vm.vmid}",
+                        text = "ID: ${vm.vmid} | Status: ${vm.status.uppercase()}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
-                Icon(
-                    imageVector = when (vm.status) {
-                        "running" -> Icons.Default.PlayArrow
-                        "stopped" -> Icons.Default.Stop
-                        "paused" -> Icons.Default.Pause
-                        else -> Icons.Default.Help
-                    },
-                    contentDescription = vm.status,
-                    tint = when (vm.status) {
-                        "running" -> MaterialTheme.colorScheme.primary
-                        "stopped" -> MaterialTheme.colorScheme.error
-                        "paused" -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                // Status indicator
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(
+                            color = when (vm.status) {
+                                "running" -> Color.Green
+                                "stopped" -> Color.Red
+                                "paused" -> Color.Yellow
+                                else -> Color.Gray
+                            },
+                            shape = CircleShape
+                        )
                 )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
+            // VM details
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = "CPU",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    VMDetailItem(
+                        label = "CPU",
+                        value = "${String.format("%.1f", vm.cpu)}%",
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Text(
-                        text = "${vm.cpu.toInt()}%",
-                        style = MaterialTheme.typography.bodyMedium
+                    VMDetailItem(
+                        label = "Memory",
+                        value = "${String.format("%.1f", vm.mem / 1024.0 / 1024.0 / 1024.0)} GB",
+                        color = MaterialTheme.colorScheme.secondary
                     )
-                }
-                
-                Column {
-                    Text(
-                        text = "Memory",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${(vm.mem / 1024 / 1024 / 1024).toInt()}GB / ${(vm.maxmem / 1024 / 1024 / 1024).toInt()}GB",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                Column {
-                    Text(
-                        text = "Uptime",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${(vm.uptime / 3600).toInt()}h",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            
-            if (!vm.tags.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Tags: ${vm.tags}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                VMDetailItem(
+                    label = "Uptime",
+                    value = formatUptime(vm.uptime),
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
             
@@ -330,30 +366,12 @@ fun VMCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = {
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.startVM(
-                                    node = node,
-                                    vmid = vm.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("VM ${vm.name} started successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to start VM: $error")
-                                    }
-                                )
-                            }
-                        }
-                    },
-                    enabled = vm.status != "running" && !isActionInProgress,
+                    onClick = onStart,
+                    enabled = vm.status != "running" && !actionInProgress,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
-                    if (isActionInProgress) {
+                    if (actionInProgress) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp
@@ -366,30 +384,12 @@ fun VMCard(
                 }
                 
                 Button(
-                    onClick = {
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.stopVM(
-                                    node = node,
-                                    vmid = vm.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("VM ${vm.name} stopped successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to stop VM: $error")
-                                    }
-                                )
-                            }
-                        }
-                    },
-                    enabled = vm.status == "running" && !isActionInProgress,
+                    onClick = onStop,
+                    enabled = vm.status == "running" && !actionInProgress,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    if (isActionInProgress) {
+                    if (actionInProgress) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp
@@ -402,7 +402,7 @@ fun VMCard(
                 }
                 
                 OutlinedButton(
-                    onClick = { showDeleteConfirmation = true },
+                    onClick = onDelete,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
@@ -415,44 +415,100 @@ fun VMCard(
             }
         }
     }
-    
-    // Delete confirmation dialog
-    if (showDeleteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete VM") },
-            text = { Text("Are you sure you want to delete VM '${vm.name}'? This action cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirmation = false
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.deleteVM(
-                                    node = node,
-                                    vmid = vm.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("VM ${vm.name} deleted successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to delete VM: $error")
-                                    }
-                                )
-                            }
-                        }
-                    }
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel")
-                }
-            }
+}
+
+@Composable
+fun VMDetailItem(
+    label: String,
+    value: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
         )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = color.copy(alpha = 0.7f)
+        )
+    }
+}
+
+// Helper function to refresh VMs
+suspend fun refreshVMs(
+    apiService: com.proxmoxmobile.data.api.ProxmoxApiService,
+    nodeName: String,
+    onSuccess: (List<VirtualMachine>) -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        Log.d("VMListScreen", "Refreshing VMs for node: $nodeName")
+        val response = apiService.getVirtualMachines(nodeName)
+        Log.d("VMListScreen", "API response received: ${response.data?.size ?: 0} VMs")
+        
+        // Safely handle the response data
+        val vmList = response.data ?: emptyList()
+        Log.d("VMListScreen", "Processed ${vmList.size} VMs")
+        
+        // Validate each VM before adding to the list
+        val validVMs = vmList.filter { vm ->
+            try {
+                vm.vmid > 0 && 
+                vm.name.isNotBlank() && 
+                vm.status.isNotBlank() &&
+                vm.cpu >= 0 &&
+                vm.mem >= 0 &&
+                vm.maxmem >= 0 &&
+                vm.uptime >= 0
+            } catch (e: Exception) {
+                Log.w("VMListScreen", "Invalid VM data: ${e.message}")
+                false
+            }
+        }
+        
+        onSuccess(validVMs)
+        Log.d("VMListScreen", "Successfully refreshed ${validVMs.size} valid VMs")
+        
+    } catch (e: retrofit2.HttpException) {
+        Log.e("VMListScreen", "HTTP error refreshing VMs: ${e.code()}", e)
+        when (e.code()) {
+            401 -> onError("Authentication required - please login again")
+            403 -> onError("Access forbidden - check permissions")
+            404 -> onError("Node not found: $nodeName")
+            500 -> onError("Server error - please try again")
+            else -> onError("Failed to refresh VMs: HTTP ${e.code()}")
+        }
+    } catch (e: Exception) {
+        Log.e("VMListScreen", "Failed to refresh VMs", e)
+        onError("Failed to refresh VMs: ${e.message}")
+    }
+}
+
+// Helper function to format time ago
+fun formatTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    
+    return when {
+        diff < 60000 -> "Just now"
+        diff < 3600000 -> "${diff / 60000}m ago"
+        diff < 86400000 -> "${diff / 3600000}h ago"
+        else -> "${diff / 86400000}d ago"
+    }
+}
+
+// Helper function to format uptime
+fun formatUptime(uptime: Long): String {
+    return when {
+        uptime < 60 -> "${uptime}s"
+        uptime < 3600 -> "${uptime / 60}m"
+        uptime < 86400 -> "${uptime / 3600}h"
+        else -> "${uptime / 86400}d"
     }
 }

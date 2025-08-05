@@ -1,219 +1,177 @@
 # Proxmox VE Mobile
 
-A modern Android application for managing Proxmox Virtual Environment servers from your mobile device.
+A modern Android app for managing Proxmox VE servers with a clean, intuitive interface.
 
-## 🚀 Current Status
+## ✨ **Latest Features (Real-time & Clean UI)**
 
-### ✅ Completed Features
-- **Project Setup & Architecture**: Complete Android project with modern architecture
-- **Material Design 3**: Beautiful, modern UI with OLED dark mode support
-- **Authentication System**: Secure login with encrypted credential storage
-- **Network Security**: SSL/TLS support with development-friendly configuration
-- **Dashboard**: Modern dashboard with system status widget (CPU, RAM, Uptime)
-- **Navigation**: Bulletproof navigation system with proper state management
-- **Manual Dependency Injection**: Clean, efficient dependency management
-- **JDK Compatibility**: Fixed all Java/Kotlin version compatibility issues
-- **LXC Containers**: Full LXC container management with list view and action buttons
-- **Virtual Machines**: Complete VM management with list view and action buttons
-- **Storage Management**: Storage pool monitoring and management
-- **Network Management**: Network interface monitoring and status display
-- **User Management**: User listing and details with status indicators
-- **Task Monitoring**: Real-time task tracking with status and timing information
-- **Backup Management**: Backup listing and details with format indicators
-- **Error Handling**: Comprehensive error handling with user-friendly messages
-- **Data Validation**: Robust data validation and filtering
-- **Secure Storage**: AES256 encrypted credential storage using Android Keystore
-- **Login Persistence**: Auto-fill login details with secure encryption
-- **Crash Prevention**: Fixed all dashboard and navigation crashes
+### 🔄 **Real-time Data Updates**
+- **Automatic Data Refresh**: All screens now update automatically without manual refresh buttons
+- **Dashboard**: Real-time system status with live CPU, Memory, and Uptime data
+- **VM Management**: Auto-refresh every 15 seconds with clean action buttons
+- **Container Management**: Real-time LXC container monitoring with improved UI
+- **Task Monitoring**: Live task statistics and status updates every 10 seconds
 
-### 🔄 In Development
-- Advanced Features - VM/container actions (start/stop/delete) - UI ready, API integration needed
-- Network Interface Actions - Configure network interfaces
-- User Management Actions - Create/edit/delete users
-- Task Management Actions - Delete tasks and view details
-- Backup Management Actions - Download/restore/delete backups
+### 🎨 **Clean & Modern UI**
+- **Removed Auto-refresh Buttons**: Cleaner interface without cluttered refresh controls
+- **Improved Login Screen**: Better scaling and responsive design
+- **Enhanced Container Cards**: Modern design with proper spacing and action buttons
+- **Real-time Status Indicators**: Live data display with proper formatting
+- **Streamlined Navigation**: Simplified top bar with essential actions only
 
-## 🛠 Tech Stack
+### 🔧 **Technical Improvements**
+- **Real-time Monitoring**: Continuous data updates without user intervention
+- **Better Error Handling**: Improved error messages and recovery
+- **Optimized Performance**: Reduced UI complexity for better responsiveness
+- **Clean Code**: Removed unused parameters and simplified function signatures
 
-- **Language**: Kotlin 1.9.21
+## 🚀 **Working Features**
+
+### ✅ **Core Functionality**
+- **Authentication**: Secure login with credential storage
+- **Real-time Dashboard**: Live system status and node monitoring
+- **VM Management**: Start, stop, delete virtual machines with real-time updates
+- **LXC Container Management**: Full container lifecycle management with clean UI
+- **Task Monitoring**: Real-time task statistics and management
+- **Settings**: Comprehensive configuration options
+- **Navigation**: Smooth navigation between all screens
+
+### ✅ **Real-time Updates**
+- **Dashboard**: Auto-refresh every 30 seconds with live system metrics
+- **VM List**: Real-time updates every 15 seconds with action progress indicators
+- **Container List**: Live monitoring every 15 seconds with improved card design
+- **Task Screen**: Continuous updates every 10 seconds with statistics
+- **System Status**: Live CPU, Memory, and Uptime display
+
+## 🛠 **Tech Stack**
+
+- **Language**: Kotlin
 - **UI Framework**: Jetpack Compose with Material Design 3
-- **Architecture**: MVVM with Clean Architecture principles
+- **Architecture**: MVVM with Clean Architecture
 - **Networking**: Retrofit + OkHttp with SSL/TLS support
 - **Security**: Android Keystore + EncryptedSharedPreferences
-- **Dependency Injection**: Manual DI (clean and efficient)
-- **Build System**: Gradle 8.2.0 with Android Gradle Plugin 8.2.0
-- **Target SDK**: Android 34 (API 34)
-- **Minimum SDK**: Android 7.0 (API 24)
+- **Dependency Injection**: Manual DI
+- **Build System**: Gradle
+- **Target API**: Android 8.0+ (API 26+)
 
-## ✨ Features
-
-### Working Features
-- 🔐 **Secure Authentication**: Login with encrypted credential storage
-- 📊 **Dashboard**: System status monitoring (CPU, RAM, Uptime)
-- 🐳 **LXC Containers**: View and manage LXC containers with action buttons
-- 🖥️ **Virtual Machines**: View and manage VMs with action buttons
-- 💾 **Storage Management**: Monitor storage pools
-- 🌐 **Network Management**: View network interfaces and their status
-- 👥 **User Management**: View users and their details
-- 📋 **Task Monitoring**: View running tasks and their status
-- 💿 **Backup Management**: View backups and their details
-- 🎨 **OLED Dark Mode**: Beautiful dark theme optimized for OLED screens
-- 💾 **Login Persistence**: Auto-fill login details securely
-- 🛡️ **Crash Prevention**: Robust error handling and validation
-
-### In Development
-- ⚡ **Advanced Actions**: Start/stop/delete operations for VMs and containers (UI ready, API integration needed)
-- 🔧 **Network Interface Actions**: Configure network interfaces
-- 👥 **User Management Actions**: Create/edit/delete users
-- 📋 **Task Management Actions**: Delete tasks and view details
-- 💿 **Backup Management Actions**: Download/restore/delete backups
-
-## 📁 Project Structure
+## 📁 **Project Structure**
 
 ```
 app/src/main/java/com/proxmoxmobile/
 ├── data/
-│   ├── api/                 # API services and networking
-│   ├── model/               # Data models
-│   └── security/            # Secure storage implementation
+│   ├── api/           # API interfaces and clients
+│   ├── model/         # Data models
+│   └── security/      # Secure storage
+├── di/                # Dependency injection
 ├── presentation/
-│   ├── screens/             # UI screens
-│   │   ├── auth/           # Login screen
-│   │   ├── dashboard/      # Main dashboard
-│   │   ├── containers/     # LXC management
-│   │   ├── vms/           # VM management
-│   │   └── storage/       # Storage management
-│   ├── navigation/         # Navigation components
-│   ├── theme/             # UI theming
-│   └── viewmodel/         # ViewModels
-└── ProxmoxApplication.kt   # Application class
+│   ├── screens/       # UI screens
+│   │   ├── auth/      # Login screen
+│   │   ├── dashboard/ # Main dashboard
+│   │   ├── vms/       # VM management
+│   │   ├── containers/# LXC management
+│   │   ├── tasks/     # Task monitoring
+│   │   └── settings/  # Configuration
+│   ├── navigation/    # Navigation components
+│   ├── theme/         # UI theming
+│   └── viewmodel/     # ViewModels
+└── ProxmoxApplication.kt
 ```
 
-## 🚀 Installation
+## ⚙️ **Configuration**
 
-1. **Clone the repository**:
+1. **Build the Project**:
    ```bash
-   git clone https://github.com/paceyconning/Proxmox-VE-Mobile.git
-   cd Proxmox-VE-Mobile
+   ./gradlew assembleDebug
    ```
 
-2. **Open in Android Studio**:
-   - Open Android Studio
-   - Select "Open an existing project"
-   - Navigate to the cloned directory and select it
+2. **Install on Device**:
+   ```bash
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
 
-3. **Build and Run**:
-   - Connect an Android device or start an emulator
-   - Click "Run" in Android Studio or use `./gradlew assembleDebug`
+3. **Connect to Proxmox**:
+   - Launch the app
+   - Enter your Proxmox server details
+   - Navigate the dashboard with real-time updates
 
-## ⚙️ Configuration
+## 🔧 **Recent Improvements**
 
-1. **Launch the app** and you'll see the login screen
-2. **Enter your Proxmox server details**:
-   - Host: Your Proxmox server IP/hostname
-   - Port: Usually 8006 (default)
-   - Username: Your Proxmox username
-   - Password: Your Proxmox password
-   - Realm: Usually "pam" (default)
-   - Use HTTPS: Check if your server uses HTTPS
-3. **Check "Save login details (encrypted)"** to securely save credentials
-4. **Tap "Connect to Proxmox"** to authenticate
-5. **Navigate the dashboard** to access different features
+### **Real-time Monitoring & Auto-refresh**
+- ✅ Automatic data updates across all screens
+- ✅ Live system status with real CPU/Memory data
+- ✅ Continuous monitoring without manual intervention
+- ✅ Optimized refresh intervals for different data types
 
-## 🔒 Security Features
+### **Enhanced User Experience**
+- ✅ Clean interface without cluttered refresh buttons
+- ✅ Improved login screen scaling and responsiveness
+- ✅ Modern container card design with better spacing
+- ✅ Streamlined navigation with essential actions only
 
-- **Encrypted Storage**: All saved credentials are encrypted using AES256
-- **Android Keystore**: Uses Android's secure hardware-backed keystore
-- **No Plain Text**: Passwords are never stored in plain text
-- **Secure Network**: SSL/TLS encryption for all API communications
+### **Improved Settings & Configuration**
+- ✅ Comprehensive settings screen with various options
+- ✅ Better credential management and security
+- ✅ Enhanced configuration options for different use cases
 
-## 🎨 Recent Improvements
+### **Enhanced Task Management**
+- ✅ Real-time task monitoring with statistics
+- ✅ Live task status updates and management
+- ✅ Improved task card design and functionality
 
-### Stability & Crash Prevention
-- ✅ Fixed dashboard crashes after login
-- ✅ Resolved LXC container screen crashes
-- ✅ Improved error handling and validation
-- ✅ Enhanced navigation stability
+### **Better Visual Design**
+- ✅ Modern Material Design 3 implementation
+- ✅ Consistent theming across all screens
+- ✅ Improved typography and spacing
+- ✅ Better color scheme and visual hierarchy
 
-### User Experience
-- ✅ Added secure password storage with encryption
-- ✅ Implemented auto-fill login functionality
-- ✅ Created beautiful OLED dark mode
-- ✅ Added system status widget (CPU, RAM, Uptime)
-- ✅ Prioritized LXC containers over VMs in dashboard
+## 🐛 **Troubleshooting**
 
-### Code Quality
-- ✅ Simplified theme configuration
-- ✅ Fixed build system issues
-- ✅ Removed problematic dependencies
-- ✅ Enhanced data validation and filtering
+### **Common Issues**
+- **Connection Failed**: Check server URL, port, and credentials
+- **Authentication Error**: Verify username, password, and realm
+- **No Data**: Ensure Proxmox server is running and accessible
+- **Real-time Updates**: Data refreshes automatically - no manual refresh needed
 
-## 🐛 Troubleshooting
+### **Performance**
+- **Slow Loading**: Check network connection and server response time
+- **High Battery Usage**: Real-time updates are optimized for efficiency
+- **Memory Usage**: App uses efficient caching and data management
 
-### Build Issues
-- **JDK Version**: Ensure you're using Java 17
-- **Gradle Sync**: Try "File > Invalidate Caches and Restart"
-- **Clean Build**: Run `./gradlew clean` before building
+## 📋 **Roadmap**
 
-### Runtime Issues
-- **Network**: Check your Proxmox server is accessible
-- **Authentication**: Verify username/password and realm
-- **SSL**: For self-signed certificates, the app handles this automatically
-
-### Common Solutions
-- **App Crashes**: The app now has robust crash prevention
-- **Login Issues**: Try clearing saved credentials and re-entering
-- **Data Loading**: Check network connectivity and server status
-
-## 🗺️ Roadmap
-
-### Phase 1: Core Features ✅
-- [x] Project setup and architecture
-- [x] Authentication system
-- [x] Dashboard with system monitoring
+### **Phase 1: Core Features** ✅
+- [x] Authentication and secure credential storage
+- [x] Dashboard with real-time system status
+- [x] VM management (start, stop, delete)
 - [x] LXC container management
-- [x] Virtual machine management
-- [x] Storage management
-- [x] Secure credential storage
+- [x] Task monitoring and statistics
+- [x] Real-time monitoring and auto-refresh
 
-### Phase 2: Advanced Management 🚧
-- [ ] Network interface monitoring
-- [ ] User and permission management
-- [ ] Task monitoring and management
-- [ ] Backup creation and restoration
-- [ ] Advanced VM/container operations
+### **Phase 2: Advanced Management** ✅
+- [x] Enhanced task monitoring with statistics
+- [x] Improved settings and configuration
+- [x] Better error handling and user feedback
+- [x] Clean UI design and real-time updates
 
-### Phase 3: Enhanced Features 📋
-- [ ] Real-time monitoring
-- [ ] Push notifications
-- [ ] Widget support
+### **Phase 3: Enhanced Features** 🚧
+- [ ] Console access for VMs and containers
+- [ ] Backup management and scheduling
+- [ ] Storage management and monitoring
+- [ ] Network interface management
+- [ ] User management and permissions
+- [ ] Cluster management features
+
+### **Phase 4: Enterprise Features** 📋
 - [ ] Multi-server management
-- [ ] Advanced analytics
+- [ ] Advanced monitoring and alerts
+- [ ] Backup and restore operations
+- [ ] Performance analytics
+- [ ] Custom dashboard widgets
+- [ ] API rate limiting and optimization
 
-### Phase 4: Enterprise Features 🔮
-- [ ] Role-based access control
-- [ ] Audit logging
-- [ ] Advanced security features
-- [ ] Integration with enterprise systems
+## 🤝 **Contributing**
 
-## 🤝 Contributing
+This project is actively developed. Contributions are welcome!
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 📄 **License**
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Proxmox VE team for the excellent virtualization platform
-- Android and Jetpack Compose teams for the amazing development tools
-- The open-source community for inspiration and support
-
----
-
-**Note**: This app is designed for managing Proxmox VE servers. Ensure you have proper access permissions to your Proxmox server before using this application. 
+This project is licensed under the MIT License - see the LICENSE file for details. 

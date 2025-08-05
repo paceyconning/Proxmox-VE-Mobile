@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -109,67 +110,49 @@ fun ContainerListScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showSnackbar by remember { mutableStateOf(false) }
+    var lastRefreshTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var actionInProgress by remember { mutableStateOf<Pair<String, Int>?>(null) } // action, vmid
     val snackbarHostState = remember { SnackbarHostState() }
     
     val scope = rememberCoroutineScope()
     val apiService = viewModel.getApiService()
 
+    // Real-time data refresh
+    LaunchedEffect(nodeName) {
+        while (!nodeName.isNullOrBlank()) {
+            delay(15000) // Refresh every 15 seconds for containers
+            if (viewModel.isAuthenticated.value && apiService != null) {
+                scope.launch {
+                    refreshContainers(apiService, nodeName, { newContainers ->
+                        containers = newContainers
+                        lastRefreshTime = System.currentTimeMillis()
+                    }, { error ->
+                        errorMessage = error
+                    })
+                }
+            }
+        }
+    }
+
+    // Load containers function
+    fun loadContainers() {
+        if (apiService != null && !nodeName.isNullOrBlank()) {
+            scope.launch {
+                refreshContainers(apiService, nodeName, { newContainers ->
+                    containers = newContainers
+                    lastRefreshTime = System.currentTimeMillis()
+                    errorMessage = null
+                }, { error ->
+                    errorMessage = error
+                })
+            }
+        }
+    }
+
     // Load containers when the screen is first displayed
     LaunchedEffect(apiService, nodeName) {
         if (apiService != null && !nodeName.isNullOrBlank()) {
-            scope.launch {
-                try {
-                    isLoading = true
-                    errorMessage = null
-                    
-                    Log.d("ContainerListScreen", "Loading containers for node: $nodeName")
-                    val response = apiService.getContainers(nodeName)
-                    Log.d("ContainerListScreen", "API response received: ${response.data?.size ?: 0} containers")
-                    
-                    // Safely handle the response data
-                    val containerList = response.data ?: emptyList()
-                    Log.d("ContainerListScreen", "Processed ${containerList.size} containers")
-                    
-                    // Validate each container before adding to the list
-                    val validContainers = containerList.filter { container ->
-                        try {
-                            container.vmid > 0 && 
-                            container.name.isNotBlank() && 
-                            container.status.isNotBlank() &&
-                            container.cpu >= 0 &&
-                            container.mem >= 0 &&
-                            container.maxmem >= 0 &&
-                            container.uptime >= 0
-                        } catch (e: Exception) {
-                            Log.w("ContainerListScreen", "Invalid container data: ${e.message}")
-                            false
-                        }
-                    }
-                    // Sort: by VMID ascending
-                    containers = validContainers.sortedBy { it.vmid }
-                    Log.d("ContainerListScreen", "Successfully loaded ${containers.size} valid containers")
-                    
-                    // Start real-time metrics collection in background
-                    scope.launch {
-                        startMetricsCollection(apiService, nodeName)
-                    }
-                    
-                } catch (e: retrofit2.HttpException) {
-                    Log.e("ContainerListScreen", "HTTP error loading containers: ${e.code()}", e)
-                    when (e.code()) {
-                        401 -> errorMessage = "Authentication required - please login again"
-                        403 -> errorMessage = "Access forbidden - check permissions"
-                        404 -> errorMessage = "Node not found: $nodeName"
-                        500 -> errorMessage = "Server error - please try again"
-                        else -> errorMessage = "Failed to load containers: HTTP ${e.code()}"
-                    }
-                } catch (e: Exception) {
-                    Log.e("ContainerListScreen", "Failed to load containers", e)
-                    errorMessage = "Failed to load containers: ${e.message}"
-                } finally {
-                    isLoading = false
-                }
-            }
+            loadContainers()
         } else {
             errorMessage = "Invalid node name or API service not available"
         }
@@ -178,125 +161,187 @@ fun ContainerListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("LXC Containers - ${nodeName ?: "Unknown"}") },
+                title = { 
+                    Text(
+                        "LXC Containers",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: Settings */ }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = { 
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
-                Snackbar(
-                    snackbarData = snackbarData,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-    ) { padding ->
-
-        
-        Column(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Error message
-            errorMessage?.let { error ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+            // Last refresh indicator
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        text = "Last updated: ${formatTimeAgo(lastRefreshTime)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
                 }
             }
 
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (containers.isEmpty() && errorMessage == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+            // Error message
+            if (!errorMessage.isNullOrBlank()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No LXC Containers Found",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "This node doesn't have any LXC containers configured",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "LXC Containers (${containers.size})",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp)
-                        )
-                    }
-
-                    items(containers) { container ->
-                        ContainerCard(
-                            container = container,
-                            viewModel = viewModel,
-                            node = nodeName ?: "pve",
-                            onActionSuccess = { message ->
-                                snackbarMessage = message
-                                showSnackbar = true
-                            },
-                            onActionError = { message ->
-                                snackbarMessage = message
-                                showSnackbar = true
-                            }
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            navController.navigate(Screen.ContainerDetail.createRoute(container.vmid))
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = errorMessage!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         }
                     }
                 }
             }
-        }
-    }
-    
-    // Show snackbar when there's a message
-    LaunchedEffect(showSnackbar, snackbarMessage) {
-        if (showSnackbar && snackbarMessage != null) {
-            snackbarHostState.showSnackbar(snackbarMessage!!)
-            showSnackbar = false
-            snackbarMessage = null
+
+            // Loading indicator
+            if (isLoading) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Loading containers...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Container list
+            items(containers) { container ->
+                ContainerCard(
+                    container = container,
+                    onStart = {
+                        actionInProgress = "start" to container.vmid
+                        viewModel.startContainer(nodeName!!, container.vmid,
+                            onSuccess = {
+                                actionInProgress = null
+                                snackbarMessage = "✅ Container ${container.name} started successfully"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                loadContainers() // Refresh the list
+                            },
+                            onError = { error ->
+                                actionInProgress = null
+                                snackbarMessage = "❌ Failed to start container: $error"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                            }
+                        )
+                    },
+                    onStop = {
+                        actionInProgress = "stop" to container.vmid
+                        viewModel.stopContainer(nodeName!!, container.vmid,
+                            onSuccess = {
+                                actionInProgress = null
+                                snackbarMessage = "✅ Container ${container.name} stopped successfully"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                loadContainers() // Refresh the list
+                            },
+                            onError = { error ->
+                                actionInProgress = null
+                                snackbarMessage = "❌ Failed to stop container: $error"
+                                scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                            }
+                        )
+                    },
+                    onDelete = {
+                        viewModel.showConfirmationDialog(
+                            MainViewModel.ConfirmationDialog(
+                                title = "Delete Container",
+                                message = "Are you sure you want to delete container '${container.name}' (ID: ${container.vmid})? This action cannot be undone.",
+                                onConfirm = {
+                                    viewModel.hideConfirmationDialog()
+                                    actionInProgress = "delete" to container.vmid
+                                    viewModel.deleteContainer(nodeName!!, container.vmid,
+                                        onSuccess = {
+                                            actionInProgress = null
+                                            snackbarMessage = "✅ Container ${container.name} deleted successfully"
+                                            scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                            loadContainers() // Refresh the list
+                                        },
+                                        onError = { error ->
+                                            actionInProgress = null
+                                            snackbarMessage = "❌ Failed to delete container: $error"
+                                            scope.launch { snackbarHostState.showSnackbar(snackbarMessage!!) }
+                                        }
+                                    )
+                                },
+                                onDismiss = {
+                                    viewModel.hideConfirmationDialog()
+                                }
+                            )
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -305,53 +350,52 @@ fun ContainerListScreen(
 @Composable
 fun ContainerCard(
     container: Container, 
-    viewModel: MainViewModel,
-    node: String = "pve", // Default node, should be passed from parent
-    onActionSuccess: (String) -> Unit = {},
-    onActionError: (String) -> Unit = {},
-    onClick: () -> Unit = {}
+    onStart: () -> Unit = {},
+    onStop: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
     var isActionInProgress by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 3.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
+            // Header with container info
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = when (container.status) {
+                        "running" -> Color.Green
+                        "stopped" -> Color.Red
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = container.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "ID: ${container.vmid}",
+                        text = "ID: ${container.vmid} | Status: ${container.status.uppercase()}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        text = "Status: ${container.status}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = when (container.status) {
-                            "running" -> Color.Green
-                            "stopped" -> Color.Red
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
                 }
-                
                 // Status indicator
                 Box(
                     modifier = Modifier
@@ -367,151 +411,40 @@ fun ContainerCard(
                 )
             }
             
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Resource Usage Graph
-            Card(
+            // Resource usage
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
-                    modifier = Modifier.padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = "Resource Usage",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    // Get average metrics for the past 5 minutes
-                    val avgMetrics = ResourceMetricsStorage.getAverageMetrics(container.vmid)
-                    val displayCpu = avgMetrics?.cpu ?: container.cpu
-                    val displayRam = avgMetrics?.ram ?: container.mem
-                    val displayDisk = avgMetrics?.disk ?: container.disk
-                    val displayNetwork = avgMetrics?.networkIn ?: container.netin
-                    
-                    // Use current data if averages are not available or if container is not running
-                    val useCurrentData = avgMetrics == null || container.status != "running"
-                    val finalCpu = if (useCurrentData) container.cpu else displayCpu
-                    val finalRam = if (useCurrentData) container.mem else displayRam
-                    val finalNetwork = if (useCurrentData) container.netin else displayNetwork
-                    
-                    // CPU Usage Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = if (useCurrentData) "CPU" else "CPU (5min avg)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${(finalCpu * 100).format(1)}%",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        LinearProgressIndicator(
-                            progress = { finalCpu.toFloat() },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                    
-                    // RAM Usage Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = if (useCurrentData) "RAM" else "RAM (5min avg)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = formatBytes(finalRam),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        LinearProgressIndicator(
-                            progress = { (finalRam.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp),
-                            color = MaterialTheme.colorScheme.secondary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                    
-                    // Network Usage Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = if (useCurrentData) "Network" else "Network (5min avg)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${formatBytes(finalNetwork)}/s",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        LinearProgressIndicator(
-                            progress = { (finalNetwork.toFloat() / 1024f / 1024f).coerceIn(0f, 1f) }, // Normalize to MB/s
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp),
-                            color = MaterialTheme.colorScheme.tertiary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    }
-                }
+                ContainerDetailItem(
+                    label = "CPU",
+                    value = "${String.format("%.1f", container.cpu)}%",
+                    color = MaterialTheme.colorScheme.primary
+                )
+                ContainerDetailItem(
+                    label = "Memory",
+                    value = "${String.format("%.1f", container.mem / 1024.0 / 1024.0 / 1024.0)} GB",
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                ContainerDetailItem(
+                    label = "Uptime",
+                    value = formatUptime(container.uptime),
+                    color = MaterialTheme.colorScheme.tertiary
+                )
             }
             
-            Spacer(modifier = Modifier.height(6.dp))
-            
             // Action buttons
+            Spacer(modifier = Modifier.height(12.dp))
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = {
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.startContainer(
-                                    node = node,
-                                    vmid = container.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("Container ${container.name} started successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to start container: $error")
-                                    }
-                                )
-                            }
-                        }
-                    },
+                    onClick = onStart,
                     enabled = container.status != "running" && !isActionInProgress,
+                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     if (isActionInProgress) {
@@ -522,31 +455,14 @@ fun ContainerCard(
                     } else {
                         Icon(Icons.Filled.PlayArrow, contentDescription = "Start")
                     }
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Start")
                 }
                 
                 Button(
-                    onClick = {
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.stopContainer(
-                                    node = node,
-                                    vmid = container.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("Container ${container.name} stopped successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to stop container: $error")
-                                    }
-                                )
-                            }
-                        }
-                    },
+                    onClick = onStop,
                     enabled = container.status == "running" && !isActionInProgress,
+                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                 ) {
                     if (isActionInProgress) {
@@ -557,72 +473,47 @@ fun ContainerCard(
                     } else {
                         Icon(Icons.Filled.Stop, contentDescription = "Stop")
                     }
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Stop")
                 }
                 
                 OutlinedButton(
-                    onClick = { /* TODO: Open console */ },
-                    colors = ButtonDefaults.outlinedButtonColors()
-                ) {
-                    Icon(Icons.Filled.Terminal, contentDescription = "Console")
-                    Spacer(Modifier.width(4.dp))
-                    Text("Console")
-                }
-                
-                OutlinedButton(
-                    onClick = { showDeleteConfirmation = true },
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Icon(Icons.Filled.Delete, contentDescription = "Delete")
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Delete")
                 }
             }
         }
     }
-    
-    // Delete confirmation dialog
-    if (showDeleteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete Container") },
-            text = { Text("Are you sure you want to delete container '${container.name}'? This action cannot be undone.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirmation = false
-                        if (!isActionInProgress) {
-                            isActionInProgress = true
-                            scope.launch {
-                                viewModel.deleteContainer(
-                                    node = node,
-                                    vmid = container.vmid,
-                                    onSuccess = {
-                                        isActionInProgress = false
-                                        onActionSuccess("Container ${container.name} deleted successfully")
-                                    },
-                                    onError = { error ->
-                                        isActionInProgress = false
-                                        onActionError("Failed to delete container: $error")
-                                    }
-                                )
-                            }
-                        }
-                    }
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel")
-                }
-            }
+}
+
+@Composable
+fun ContainerDetailItem(
+    label: String,
+    value: String,
+    color: Color
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
         )
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = color.copy(alpha = 0.7f)
+        )
+    }
 }
 
 // Real-time metrics collection
@@ -1187,6 +1078,81 @@ fun formatBytes(bytes: Long): String {
         bytes >= 1024 * 1024 -> "${(bytes.toDouble() / 1024 / 1024).format(1)}MB"
         bytes >= 1024 -> "${(bytes.toDouble() / 1024).format(1)}KB"
         else -> "${bytes}B"
+    }
+}
+
+// Helper function to refresh containers
+suspend fun refreshContainers(
+    apiService: ProxmoxApiService,
+    nodeName: String,
+    onSuccess: (List<Container>) -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        Log.d("ContainerListScreen", "Refreshing containers for node: $nodeName")
+        val response = apiService.getContainers(nodeName)
+        Log.d("ContainerListScreen", "API response received: ${response.data?.size ?: 0} containers")
+        
+        // Safely handle the response data
+        val containerList = response.data ?: emptyList()
+        Log.d("ContainerListScreen", "Processed ${containerList.size} containers")
+        
+        // Validate each container before adding to the list
+        val validContainers = containerList.filter { container ->
+            try {
+                container.vmid > 0 && 
+                container.name.isNotBlank() && 
+                container.status.isNotBlank() &&
+                container.cpu >= 0 &&
+                container.mem >= 0 &&
+                container.maxmem >= 0 &&
+                container.uptime >= 0
+            } catch (e: Exception) {
+                Log.w("ContainerListScreen", "Invalid container data: ${e.message}")
+                false
+            }
+        }
+        
+        // Sort: by VMID ascending
+        val sortedContainers = validContainers.sortedBy { it.vmid }
+        onSuccess(sortedContainers)
+        Log.d("ContainerListScreen", "Successfully refreshed ${sortedContainers.size} valid containers")
+        
+    } catch (e: retrofit2.HttpException) {
+        Log.e("ContainerListScreen", "HTTP error refreshing containers: ${e.code()}", e)
+        when (e.code()) {
+            401 -> onError("Authentication required - please login again")
+            403 -> onError("Access forbidden - check permissions")
+            404 -> onError("Node not found: $nodeName")
+            500 -> onError("Server error - please try again")
+            else -> onError("Failed to refresh containers: HTTP ${e.code()}")
+        }
+    } catch (e: Exception) {
+        Log.e("ContainerListScreen", "Failed to refresh containers", e)
+        onError("Failed to refresh containers: ${e.message}")
+    }
+}
+
+// Helper function to format time ago
+fun formatTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    
+    return when {
+        diff < 60000 -> "Just now"
+        diff < 3600000 -> "${diff / 60000}m ago"
+        diff < 86400000 -> "${diff / 3600000}h ago"
+        else -> "${diff / 86400000}d ago"
+    }
+}
+
+// Helper function to format uptime
+fun formatUptime(uptime: Long): String {
+    return when {
+        uptime < 60 -> "${uptime}s"
+        uptime < 3600 -> "${uptime / 60}m"
+        uptime < 86400 -> "${uptime / 3600}h"
+        else -> "${uptime / 86400}d"
     }
 }
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +22,10 @@ import android.util.Log
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import java.util.Locale
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
 
@@ -33,7 +38,38 @@ fun DashboardScreen(
     var nodes by remember { mutableStateOf<List<Node>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var lastRefreshTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val scope = rememberCoroutineScope()
+
+            // Real-time data refresh
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(30000) // Refresh every 30 seconds
+                if (viewModel.isAuthenticated.value) {
+                    scope.launch {
+                        refreshNodes(viewModel, { newNodes ->
+                            nodes = newNodes
+                            lastRefreshTime = System.currentTimeMillis()
+                        }, { error ->
+                            errorMessage = error
+                        })
+                    }
+                }
+            }
+        }
+
+    // Initial load and manual refresh function
+    fun loadNodes() {
+        scope.launch {
+            refreshNodes(viewModel, { newNodes ->
+                nodes = newNodes
+                lastRefreshTime = System.currentTimeMillis()
+                errorMessage = null
+            }, { error ->
+                errorMessage = error
+            })
+        }
+    }
 
     // Fetch nodes when screen loads
     LaunchedEffect(Unit) {
@@ -41,83 +77,12 @@ fun DashboardScreen(
             val cached = viewModel.getCachedNodes()
             if (cached != null && cached.isNotEmpty()) {
                 nodes = cached
+                lastRefreshTime = System.currentTimeMillis()
                 isLoading = false
                 errorMessage = null
                 Log.d("DashboardScreen", "Loaded nodes from cache: ${cached.size}")
             } else {
-                scope.launch {
-                    try {
-                        // Add a longer delay to ensure authentication is complete
-                        kotlinx.coroutines.delay(2000)
-                        
-                        isLoading = true
-                        errorMessage = null
-                        
-                        Log.d("DashboardScreen", "Starting to load nodes")
-                        
-                        // Check if we have a valid API service
-                        val apiService = try {
-                            viewModel.getApiService()
-                        } catch (e: Exception) {
-                            Log.e("DashboardScreen", "Failed to get API service", e)
-                            errorMessage = "Authentication failed - please login again"
-                            return@launch
-                        }
-                        
-                        if (apiService == null) {
-                            Log.e("DashboardScreen", "API service is null")
-                            errorMessage = "Not authenticated - please login again"
-                            return@launch
-                        }
-                        
-                        Log.d("DashboardScreen", "API service available, fetching nodes")
-                        
-                        // Wrap the API call in additional error handling
-                        val response = try {
-                            apiService.getNodes()
-                        } catch (e: Exception) {
-                            Log.e("DashboardScreen", "API call failed", e)
-                            errorMessage = "Failed to connect to server: "+e.message
-                            return@launch
-                        }
-                        
-                        Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
-                        
-                        // Safely handle the response data
-                        val nodeList = response.data ?: emptyList()
-                        Log.d("DashboardScreen", "Processed ${nodeList.size} nodes")
-                        
-                        // Validate each node before adding to the list
-                        val validNodes = nodeList.filter { node ->
-                            try {
-                                node.node.isNotBlank() && 
-                                node.status.isNotBlank() &&
-                                node.cpu >= 0 &&
-                                node.mem >= 0 &&
-                                node.uptime >= 0
-                            } catch (e: Exception) {
-                                Log.w("DashboardScreen", "Invalid node data: ${e.message}")
-                                false
-                            }
-                        }
-                        nodes = validNodes
-                        viewModel.setCachedNodes(validNodes)
-                        Log.d("DashboardScreen", "Successfully loaded ${nodes.size} valid nodes and cached them")
-                    } catch (e: retrofit2.HttpException) {
-                        Log.e("DashboardScreen", "HTTP error loading nodes: ${e.code()}", e)
-                        when (e.code()) {
-                            401 -> errorMessage = "Authentication required - please login again"
-                            403 -> errorMessage = "Access forbidden - check permissions"
-                            500 -> errorMessage = "Server error - please try again"
-                            else -> errorMessage = "Failed to load nodes: HTTP ${e.code()}"
-                        }
-                    } catch (e: Exception) {
-                        Log.e("DashboardScreen", "Failed to load nodes", e)
-                        errorMessage = "Failed to load nodes: ${e.message}"
-                    } finally {
-                        isLoading = false
-                    }
-                }
+                loadNodes()
             }
         } catch (e: Exception) {
             Log.e("DashboardScreen", "Critical error in LaunchedEffect", e)
@@ -170,6 +135,21 @@ fun DashboardScreen(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Last refresh indicator
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Last updated: ${formatTimeAgo(lastRefreshTime)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // System Status Card (only show if we have nodes)
             if (nodes.isNotEmpty()) {
                 item {
@@ -478,14 +458,14 @@ fun SystemStatusCard(node: Node) {
             ) {
                 StatusItem(
                     label = "CPU",
-                    value = "${(node.cpu * 100).format(1)}%",
+                    value = "${String.format("%.1f", node.cpu * 100)}%",
                     icon = Icons.Default.Memory,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
                 StatusItem(
                     label = "Memory",
-                    value = if (node.mem >= 1024 * 1024 * 1024) "${(node.mem.toDouble() / 1024 / 1024 / 1024).format(1)}GB" else "${(node.mem.toDouble() / 1024 / 1024).format(1)}MB",
+                    value = if (node.mem >= 1024 * 1024 * 1024) "${String.format("%.1f", node.mem.toDouble() / 1024 / 1024 / 1024)}GB" else "${String.format("%.1f", node.mem.toDouble() / 1024 / 1024)}MB",
                     icon = Icons.Default.Storage,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.weight(1f)
@@ -619,5 +599,91 @@ fun QuickActionCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+// Helper function to refresh nodes
+suspend fun refreshNodes(
+    viewModel: MainViewModel,
+    onSuccess: (List<Node>) -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        Log.d("DashboardScreen", "Starting to refresh nodes")
+        
+        // Check if we have a valid API service
+        val apiService = try {
+            viewModel.getApiService()
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "Failed to get API service", e)
+            onError("Authentication failed - please login again")
+            return
+        }
+        
+        if (apiService == null) {
+            Log.e("DashboardScreen", "API service is null")
+            onError("Not authenticated - please login again")
+            return
+        }
+        
+        Log.d("DashboardScreen", "API service available, fetching nodes")
+        
+        // Wrap the API call in additional error handling
+        val response = try {
+            apiService.getNodes()
+        } catch (e: Exception) {
+            Log.e("DashboardScreen", "API call failed", e)
+            onError("Failed to connect to server: ${e.message}")
+            return
+        }
+        
+        Log.d("DashboardScreen", "Nodes response received: ${response.data?.size ?: 0} nodes")
+        
+        // Safely handle the response data
+        val nodeList = response.data ?: emptyList()
+        Log.d("DashboardScreen", "Processed ${nodeList.size} nodes")
+        
+        // Validate each node before adding to the list
+        val validNodes = nodeList.filter { node ->
+            try {
+                node.node.isNotBlank() && 
+                node.status.isNotBlank() &&
+                node.cpu >= 0 &&
+                node.mem >= 0 &&
+                node.uptime >= 0
+            } catch (e: Exception) {
+                Log.w("DashboardScreen", "Invalid node data: ${e.message}")
+                false
+            }
+        }
+        
+        viewModel.setCachedNodes(validNodes)
+        onSuccess(validNodes)
+        Log.d("DashboardScreen", "Successfully refreshed ${validNodes.size} valid nodes")
+        
+    } catch (e: retrofit2.HttpException) {
+        Log.e("DashboardScreen", "HTTP error refreshing nodes: ${e.code()}", e)
+        when (e.code()) {
+            401 -> onError("Authentication required - please login again")
+            403 -> onError("Access forbidden - check permissions")
+            500 -> onError("Server error - please try again")
+            else -> onError("Failed to refresh nodes: HTTP ${e.code()}")
+        }
+    } catch (e: Exception) {
+        Log.e("DashboardScreen", "Failed to refresh nodes", e)
+        onError("Failed to refresh nodes: ${e.message}")
+    }
+}
+
+// Helper function to format time ago
+fun formatTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    
+    return when {
+        diff < 60000 -> "Just now"
+        diff < 3600000 -> "${diff / 60000}m ago"
+        diff < 86400000 -> "${diff / 3600000}h ago"
+        else -> "${diff / 86400000}d ago"
     }
 } 
