@@ -308,6 +308,82 @@ fun ContainerCard(
             
             Spacer(modifier = Modifier.height(6.dp))
             
+            // Resource Usage Timeline
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Resource Usage",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "CPU",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${(container.cpu * 100).format(1)}%",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "RAM",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = formatBytes(container.mem),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Disk",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = formatBytes(container.disk),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Network",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${formatBytes(container.netin)}/s",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(6.dp))
+            
             // Action buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -462,6 +538,10 @@ fun ContainerDetailScreen(
     var maxCpu by remember { mutableStateOf(0) }
     var maxRam by remember { mutableStateOf(0L) }
     var isUpdatingResources by remember { mutableStateOf(false) }
+    var showCpuConfigDialog by remember { mutableStateOf(false) }
+    var showRamConfigDialog by remember { mutableStateOf(false) }
+    var tempCpuCores by remember { mutableStateOf(1) }
+    var tempRamAllocation by remember { mutableStateOf(512L) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(vmid) {
@@ -503,6 +583,8 @@ fun ContainerDetailScreen(
                     ram = foundContainer.mem
                     maxCpu = foundContainer.maxcpu
                     maxRam = foundContainer.maxmem
+                    tempCpuCores = foundContainer.cpus
+                    tempRamAllocation = foundContainer.maxmem
                 } else {
                     errorMessage = "Container not found"
                 }
@@ -646,7 +728,7 @@ fun ContainerDetailScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text("CPU Usage: ${(cpu * 100).format(1)}%")
-                            Text("CPU Cores: ${maxCpu} cores")
+                            Text("CPU Cores: ${container!!.cpus} cores")
                             Text("RAM Usage: ${formatBytes(ram)}")
                             Text("RAM Allocated: ${formatBytes(maxRam)}")
                         }
@@ -672,10 +754,10 @@ fun ContainerDetailScreen(
                             // CPU Configuration Card
                             ResourceCard(
                                 title = "CPU Cores",
-                                currentValue = "${maxCpu} cores allocated",
+                                currentValue = "${container!!.cpus} cores allocated",
                                 icon = Icons.Filled.Memory,
                                 onClick = {
-                                    // TODO: Show CPU configuration dialog
+                                    showCpuConfigDialog = true
                                 }
                             )
                             
@@ -685,7 +767,7 @@ fun ContainerDetailScreen(
                                 currentValue = "${formatBytes(maxRam)} allocated",
                                 icon = Icons.Filled.Storage,
                                 onClick = {
-                                    // TODO: Show RAM configuration dialog
+                                    showRamConfigDialog = true
                                 }
                             )
                             
@@ -835,6 +917,84 @@ fun ContainerDetailScreen(
                 }
             }
         }
+    }
+    
+    // CPU Configuration Dialog
+    if (showCpuConfigDialog) {
+        AlertDialog(
+            onDismissRequest = { showCpuConfigDialog = false },
+            title = { Text("Configure CPU Cores") },
+            text = {
+                Column {
+                    Text("Current allocation: ${container?.cpus ?: 0} cores")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Select number of CPU cores:")
+                    Slider(
+                        value = tempCpuCores.toFloat(),
+                        onValueChange = { tempCpuCores = it.toInt() },
+                        valueRange = 1f..32f,
+                        steps = 31,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text("${tempCpuCores} cores", style = MaterialTheme.typography.titleMedium)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCpuConfigDialog = false
+                        // TODO: Implement API call to update CPU cores
+                        errorMessage = "CPU configuration API not yet implemented"
+                    }
+                ) {
+                    Text("Apply")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCpuConfigDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    // RAM Configuration Dialog
+    if (showRamConfigDialog) {
+        AlertDialog(
+            onDismissRequest = { showRamConfigDialog = false },
+            title = { Text("Configure RAM Allocation") },
+            text = {
+                Column {
+                    Text("Current allocation: ${formatBytes(container?.maxmem ?: 0)}")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Select RAM allocation:")
+                    Slider(
+                        value = (tempRamAllocation / 1024f / 1024f).toFloat(),
+                        onValueChange = { tempRamAllocation = (it * 1024 * 1024).toLong() },
+                        valueRange = 128f..65536f,
+                        steps = 65535,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text("${formatBytes(tempRamAllocation)}", style = MaterialTheme.typography.titleMedium)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRamConfigDialog = false
+                        // TODO: Implement API call to update RAM allocation
+                        errorMessage = "RAM configuration API not yet implemented"
+                    }
+                ) {
+                    Text("Apply")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRamConfigDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
