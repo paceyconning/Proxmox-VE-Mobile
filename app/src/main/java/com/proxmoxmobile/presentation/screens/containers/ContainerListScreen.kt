@@ -74,11 +74,17 @@ object ResourceMetricsStorage {
         val containerMetrics = metrics[containerId] ?: return null
         if (containerMetrics.isEmpty()) return null
         
-        val avgCpu = containerMetrics.map { it.cpu }.average()
-        val avgRam = containerMetrics.map { it.ram }.average().toLong()
-        val avgDisk = containerMetrics.map { it.disk }.average().toLong()
-        val avgNetworkIn = containerMetrics.map { it.networkIn }.average().toLong()
-        val avgNetworkOut = containerMetrics.map { it.networkOut }.average().toLong()
+        // Get metrics from last 5 minutes only
+        val cutoffTime = System.currentTimeMillis() - (5 * 60 * 1000)
+        val recentMetrics = containerMetrics.filter { it.timestamp >= cutoffTime }
+        
+        if (recentMetrics.isEmpty()) return null
+        
+        val avgCpu = recentMetrics.map { it.cpu }.average()
+        val avgRam = recentMetrics.map { it.ram }.average().toLong()
+        val avgDisk = recentMetrics.map { it.disk }.average().toLong()
+        val avgNetworkIn = recentMetrics.map { it.networkIn }.average().toLong()
+        val avgNetworkOut = recentMetrics.map { it.networkOut }.average().toLong()
         
         return ResourceMetric(
             timestamp = System.currentTimeMillis(),
@@ -389,6 +395,12 @@ fun ContainerCard(
                     val displayDisk = avgMetrics?.disk ?: container.disk
                     val displayNetwork = avgMetrics?.networkIn ?: container.netin
                     
+                    // Use current data if averages are not available or if container is not running
+                    val useCurrentData = avgMetrics == null || container.status != "running"
+                    val finalCpu = if (useCurrentData) container.cpu else displayCpu
+                    val finalRam = if (useCurrentData) container.mem else displayRam
+                    val finalNetwork = if (useCurrentData) container.netin else displayNetwork
+                    
                     // CPU Usage Bar
                     Column {
                         Row(
@@ -396,18 +408,18 @@ fun ContainerCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "CPU (5min avg)",
+                                text = if (useCurrentData) "CPU" else "CPU (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${(displayCpu * 100).format(1)}%",
+                                text = "${(finalCpu * 100).format(1)}%",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { displayCpu.toFloat() },
+                            progress = { finalCpu.toFloat() },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -423,18 +435,18 @@ fun ContainerCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "RAM (5min avg)",
+                                text = if (useCurrentData) "RAM" else "RAM (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatBytes(displayRam),
+                                text = formatBytes(finalRam),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { (displayRam.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
+                            progress = { (finalRam.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -450,18 +462,18 @@ fun ContainerCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Network (5min avg)",
+                                text = if (useCurrentData) "Network" else "Network (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${formatBytes(displayNetwork)}/s",
+                                text = "${formatBytes(finalNetwork)}/s",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { (displayNetwork.toFloat() / 1024f / 1024f).coerceIn(0f, 1f) }, // Normalize to MB/s
+                            progress = { (finalNetwork.toFloat() / 1024f / 1024f).coerceIn(0f, 1f) }, // Normalize to MB/s
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -624,15 +636,19 @@ private suspend fun startMetricsCollection(apiService: ProxmoxApiService, nodeNa
             val containerList = response.data ?: emptyList()
             
             for (container in containerList) {
-                val metric = ResourceMetric(
-                    timestamp = System.currentTimeMillis(),
-                    cpu = container.cpu,
-                    ram = container.mem,
-                    disk = container.disk,
-                    networkIn = container.netin,
-                    networkOut = container.netout
-                )
-                ResourceMetricsStorage.addMetric(container.vmid, metric)
+                // Only collect metrics for running containers or if we have valid data
+                if (container.status == "running" || container.cpu > 0 || container.mem > 0) {
+                    val metric = ResourceMetric(
+                        timestamp = System.currentTimeMillis(),
+                        cpu = container.cpu,
+                        ram = container.mem,
+                        disk = container.disk,
+                        networkIn = container.netin,
+                        networkOut = container.netout
+                    )
+                    ResourceMetricsStorage.addMetric(container.vmid, metric)
+                    Log.d("MetricsCollection", "Added metric for container ${container.vmid}: CPU=${container.cpu}, RAM=${container.mem}")
+                }
             }
             
             // Collect metrics every 30 seconds (less aggressive)
@@ -1120,10 +1136,16 @@ fun ContainerDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Enter RAM allocation in MB (128-65536):")
                     Spacer(modifier = Modifier.height(8.dp))
+                    var ramInputText by remember { mutableStateOf((tempRamAllocation / 1024 / 1024).toString()) }
+                    
                     OutlinedTextField(
-                        value = (tempRamAllocation / 1024 / 1024).toString(),
+                        value = ramInputText,
                         onValueChange = { input ->
+                            // Only allow digits
                             val cleanInput = input.filter { it.isDigit() }
+                            ramInputText = cleanInput
+                            
+                            // Update the actual value only if input is valid
                             if (cleanInput.isNotEmpty()) {
                                 val value = cleanInput.toIntOrNull() ?: 512
                                 val mbValue = value.coerceIn(128, 65536)
