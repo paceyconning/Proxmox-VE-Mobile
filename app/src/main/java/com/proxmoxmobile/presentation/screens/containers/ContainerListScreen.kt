@@ -39,9 +39,56 @@ import com.proxmoxmobile.presentation.navigation.Screen
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.delay
+import java.util.concurrent.ConcurrentHashMap
+import com.proxmoxmobile.data.api.ProxmoxApiService
 
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
+
+// Data class for resource metrics
+data class ResourceMetric(
+    val timestamp: Long,
+    val cpu: Double,
+    val ram: Long,
+    val disk: Long,
+    val networkIn: Long,
+    val networkOut: Long
+)
+
+// Global resource metrics storage
+object ResourceMetricsStorage {
+    private val metrics = ConcurrentHashMap<Int, MutableList<ResourceMetric>>()
+    
+    fun addMetric(containerId: Int, metric: ResourceMetric) {
+        val containerMetrics = metrics.getOrPut(containerId) { mutableListOf() }
+        containerMetrics.add(metric)
+        
+        // Keep only last 5 minutes of data (300 seconds)
+        val cutoffTime = System.currentTimeMillis() - (5 * 60 * 1000)
+        containerMetrics.removeAll { it.timestamp < cutoffTime }
+    }
+    
+    fun getAverageMetrics(containerId: Int): ResourceMetric? {
+        val containerMetrics = metrics[containerId] ?: return null
+        if (containerMetrics.isEmpty()) return null
+        
+        val avgCpu = containerMetrics.map { it.cpu }.average()
+        val avgRam = containerMetrics.map { it.ram }.average().toLong()
+        val avgDisk = containerMetrics.map { it.disk }.average().toLong()
+        val avgNetworkIn = containerMetrics.map { it.networkIn }.average().toLong()
+        val avgNetworkOut = containerMetrics.map { it.networkOut }.average().toLong()
+        
+        return ResourceMetric(
+            timestamp = System.currentTimeMillis(),
+            cpu = avgCpu,
+            ram = avgRam,
+            disk = avgDisk,
+            networkIn = avgNetworkIn,
+            networkOut = avgNetworkOut
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +141,9 @@ fun ContainerListScreen(
                     // Sort: by VMID ascending
                     containers = validContainers.sortedBy { it.vmid }
                     Log.d("ContainerListScreen", "Successfully loaded ${containers.size} valid containers")
+                    
+                    // Start real-time metrics collection
+                    startMetricsCollection(apiService, nodeName)
                     
                 } catch (e: retrofit2.HttpException) {
                     Log.e("ContainerListScreen", "HTTP error loading containers: ${e.code()}", e)
@@ -329,6 +379,13 @@ fun ContainerCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     
+                    // Get average metrics for the past 5 minutes
+                    val avgMetrics = ResourceMetricsStorage.getAverageMetrics(container.vmid)
+                    val displayCpu = avgMetrics?.cpu ?: container.cpu
+                    val displayRam = avgMetrics?.ram ?: container.mem
+                    val displayDisk = avgMetrics?.disk ?: container.disk
+                    val displayNetwork = avgMetrics?.networkIn ?: container.netin
+                    
                     // CPU Usage Bar
                     Column {
                         Row(
@@ -336,18 +393,18 @@ fun ContainerCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "CPU",
+                                text = "CPU (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${(container.cpu * 100).format(1)}%",
+                                text = "${(displayCpu * 100).format(1)}%",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { container.cpu.toFloat() },
+                            progress = { displayCpu.toFloat() },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -363,18 +420,18 @@ fun ContainerCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "RAM",
+                                text = "RAM (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatBytes(container.mem),
+                                text = formatBytes(displayRam),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { (container.mem.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
+                            progress = { (displayRam.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -383,25 +440,25 @@ fun ContainerCard(
                         )
                     }
                     
-                    // Disk Usage Bar
+                    // Network Usage Bar
                     Column {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Disk",
+                                text = "Network (5min avg)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = formatBytes(container.disk),
+                                text = "${formatBytes(displayNetwork)}/s",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { 0.3f }, // Placeholder - would need actual disk capacity
+                            progress = { (displayNetwork.toFloat() / 1024f / 1024f).coerceIn(0f, 1f) }, // Normalize to MB/s
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(4.dp),
@@ -550,8 +607,36 @@ fun ContainerCard(
                 }
             }
         )
+        }
+}
+
+// Real-time metrics collection
+private suspend fun startMetricsCollection(apiService: ProxmoxApiService, nodeName: String) {
+    while (true) {
+        try {
+            val response = apiService.getContainers(nodeName)
+            val containerList = response.data ?: emptyList()
+            
+            for (container in containerList) {
+                val metric = ResourceMetric(
+                    timestamp = System.currentTimeMillis(),
+                    cpu = container.cpu,
+                    ram = container.mem,
+                    disk = container.disk,
+                    networkIn = container.netin,
+                    networkOut = container.netout
+                )
+                ResourceMetricsStorage.addMetric(container.vmid, metric)
+            }
+            
+            // Collect metrics every 10 seconds
+            delay(10000)
+        } catch (e: Exception) {
+            Log.e("ContainerListScreen", "Failed to collect metrics", e)
+            delay(30000) // Wait longer on error
+        }
     }
-} 
+}
 
 // Add ContainerDetailScreen
 @Composable
@@ -1005,10 +1090,13 @@ fun ContainerDetailScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = (tempRamAllocation / 1024 / 1024).toString(),
-                        onValueChange = { 
-                            val value = it.toIntOrNull() ?: 512
-                            val mbValue = value.coerceIn(128, 65536)
-                            tempRamAllocation = (mbValue * 1024 * 1024).toLong()
+                        onValueChange = { input ->
+                            val cleanInput = input.filter { it.isDigit() }
+                            if (cleanInput.isNotEmpty()) {
+                                val value = cleanInput.toIntOrNull() ?: 512
+                                val mbValue = value.coerceIn(128, 65536)
+                                tempRamAllocation = (mbValue * 1024 * 1024).toLong()
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
