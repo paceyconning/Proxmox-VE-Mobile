@@ -25,6 +25,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.material3.SnackbarHostState
+
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
 
@@ -38,6 +47,9 @@ fun ContainerListScreen(
     var containers by remember { mutableStateOf<List<Container>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var showSnackbar by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val scope = rememberCoroutineScope()
     val apiService = viewModel.getApiService()
@@ -108,8 +120,18 @@ fun ContainerListScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     ) { padding ->
+
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -183,7 +205,19 @@ fun ContainerListScreen(
                     }
 
                     items(containers) { container ->
-                        ContainerCard(container = container) {
+                        ContainerCard(
+                            container = container,
+                            viewModel = viewModel,
+                            node = nodeName ?: "pve",
+                            onActionSuccess = { message ->
+                                snackbarMessage = message
+                                showSnackbar = true
+                            },
+                            onActionError = { message ->
+                                snackbarMessage = message
+                                showSnackbar = true
+                            }
+                        ) {
                             navController.navigate("containerDetail/${container.vmid}")
                         }
                     }
@@ -191,74 +225,157 @@ fun ContainerListScreen(
             }
         }
     }
+    
+    // Show snackbar when there's a message
+    LaunchedEffect(showSnackbar, snackbarMessage) {
+        if (showSnackbar && snackbarMessage != null) {
+            snackbarHostState.showSnackbar(snackbarMessage!!)
+            showSnackbar = false
+            snackbarMessage = null
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContainerCard(container: Container, onClick: () -> Unit = {}) {
+fun ContainerCard(
+    container: Container, 
+    viewModel: MainViewModel,
+    node: String = "pve", // Default node, should be passed from parent
+    onActionSuccess: (String) -> Unit = {},
+    onActionError: (String) -> Unit = {},
+    onClick: () -> Unit = {}
+) {
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var isActionInProgress by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(8.dp)
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = container.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "#${container.vmid}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = container.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "ID: ${container.vmid}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Status: ${container.status}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = when (container.status) {
+                            "running" -> Color.Green
+                            "stopped" -> Color.Red
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+                
+                // Status indicator
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(
+                            color = when (container.status) {
+                                "running" -> Color.Green
+                                "stopped" -> Color.Red
+                                else -> Color.Gray
+                            },
+                            shape = CircleShape
+                        )
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Resource monitor
-                Text(
-                    text = "CPU: ${(container.cpu * 100).format(1)}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "RAM: ${if (container.mem > 1024*1024*1024) "${(container.mem / 1024.0 / 1024.0 / 1024.0).format(1)}GB" else "${(container.mem / 1024.0 / 1024.0).format(1)}MB"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = container.status.capitalize(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (container.status == "running") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Spacer(Modifier.height(8.dp))
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Action buttons
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = { /* TODO: Start container */ },
-                    enabled = container.status != "running",
+                    onClick = {
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.startContainer(
+                                    node = node,
+                                    vmid = container.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("Container ${container.name} started successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to start container: $error")
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    enabled = container.status != "running" && !isActionInProgress,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = "Start")
+                    if (isActionInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Start")
+                    }
                     Spacer(Modifier.width(4.dp))
                     Text("Start")
                 }
+                
                 Button(
-                    onClick = { /* TODO: Stop container */ },
-                    enabled = container.status == "running",
+                    onClick = {
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.stopContainer(
+                                    node = node,
+                                    vmid = container.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("Container ${container.name} stopped successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to stop container: $error")
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    enabled = container.status == "running" && !isActionInProgress,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    Icon(Icons.Filled.Stop, contentDescription = "Stop")
+                    if (isActionInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.Stop, contentDescription = "Stop")
+                    }
                     Spacer(Modifier.width(4.dp))
                     Text("Stop")
                 }
+                
                 OutlinedButton(
                     onClick = { /* TODO: Open console */ },
                     colors = ButtonDefaults.outlinedButtonColors()
@@ -267,8 +384,9 @@ fun ContainerCard(container: Container, onClick: () -> Unit = {}) {
                     Spacer(Modifier.width(4.dp))
                     Text("Console")
                 }
+                
                 OutlinedButton(
-                    onClick = { /* TODO: Delete container */ },
+                    onClick = { showDeleteConfirmation = true },
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
@@ -279,6 +397,46 @@ fun ContainerCard(container: Container, onClick: () -> Unit = {}) {
                 }
             }
         }
+    }
+    
+    // Delete confirmation dialog
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete Container") },
+            text = { Text("Are you sure you want to delete container '${container.name}'? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.deleteContainer(
+                                    node = node,
+                                    vmid = container.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("Container ${container.name} deleted successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to delete container: $error")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 } 
 
@@ -393,4 +551,33 @@ fun ContainerDetailScreen(
             }
         }
     }
+} 
+
+@Composable
+fun ConfirmationDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 } 

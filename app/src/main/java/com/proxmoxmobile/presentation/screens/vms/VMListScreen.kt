@@ -18,6 +18,9 @@ import com.proxmoxmobile.data.model.VirtualMachine
 import com.proxmoxmobile.presentation.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.SnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +32,9 @@ fun VMListScreen(
     var vms by remember { mutableStateOf<List<VirtualMachine>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var showSnackbar by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val scope = rememberCoroutineScope()
     val apiService = viewModel.getApiService()
@@ -99,6 +105,14 @@ fun VMListScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+                Snackbar(
+                    snackbarData = snackbarData,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -174,17 +188,48 @@ fun VMListScreen(
                     }
 
                     items(vms) { vm ->
-                        VMCard(vm = vm)
+                        VMCard(
+                            vm = vm,
+                            viewModel = viewModel,
+                            node = nodeName ?: "pve",
+                            onActionSuccess = { message ->
+                                snackbarMessage = message
+                                showSnackbar = true
+                            },
+                            onActionError = { message ->
+                                snackbarMessage = message
+                                showSnackbar = true
+                            }
+                        )
                     }
                 }
             }
+        }
+    }
+    
+    // Show snackbar when there's a message
+    LaunchedEffect(showSnackbar, snackbarMessage) {
+        if (showSnackbar && snackbarMessage != null) {
+            snackbarHostState.showSnackbar(snackbarMessage!!)
+            showSnackbar = false
+            snackbarMessage = null
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VMCard(vm: VirtualMachine) {
+fun VMCard(
+    vm: VirtualMachine,
+    viewModel: MainViewModel,
+    node: String = "pve", // Default node, should be passed from parent
+    onActionSuccess: (String) -> Unit = {},
+    onActionError: (String) -> Unit = {},
+    onClick: () -> Unit = {}
+) {
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var isActionInProgress by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -284,38 +329,130 @@ fun VMCard(vm: VirtualMachine) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
-                    onClick = { /* TODO: Start VM */ },
+                Button(
+                    onClick = {
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.startVM(
+                                    node = node,
+                                    vmid = vm.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("VM ${vm.name} started successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to start VM: $error")
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    enabled = vm.status != "running" && !isActionInProgress,
                     modifier = Modifier.weight(1f),
-                    enabled = vm.status != "running"
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                    if (isActionInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Start")
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Start")
                 }
                 
-                OutlinedButton(
-                    onClick = { /* TODO: Stop VM */ },
+                Button(
+                    onClick = {
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.stopVM(
+                                    node = node,
+                                    vmid = vm.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("VM ${vm.name} stopped successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to stop VM: $error")
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    enabled = vm.status == "running" && !isActionInProgress,
                     modifier = Modifier.weight(1f),
-                    enabled = vm.status == "running"
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                    if (isActionInProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.Stop, contentDescription = "Stop")
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Stop")
                 }
                 
                 OutlinedButton(
-                    onClick = { /* TODO: Delete VM */ },
+                    onClick = { showDeleteConfirmation = true },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete")
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Delete")
                 }
             }
         }
     }
-} 
+    
+    // Delete confirmation dialog
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Delete VM") },
+            text = { Text("Are you sure you want to delete VM '${vm.name}'? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        if (!isActionInProgress) {
+                            isActionInProgress = true
+                            scope.launch {
+                                viewModel.deleteVM(
+                                    node = node,
+                                    vmid = vm.vmid,
+                                    onSuccess = {
+                                        isActionInProgress = false
+                                        onActionSuccess("VM ${vm.name} deleted successfully")
+                                    },
+                                    onError = { error ->
+                                        isActionInProgress = false
+                                        onActionError("Failed to delete VM: $error")
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
