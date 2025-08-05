@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.text.style.TextAlign
 
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
@@ -447,37 +449,62 @@ fun ContainerDetailScreen(
     viewModel: MainViewModel,
     navController: NavController
 ) {
-    val apiService = viewModel.getApiService()
     var container by remember { mutableStateOf<Container?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var cpu by remember { mutableStateOf(0.0) }
     var ram by remember { mutableStateOf(0L) }
+    var maxCpu by remember { mutableStateOf(0) }
+    var maxRam by remember { mutableStateOf(0L) }
+    var isUpdatingResources by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(apiService, vmid) {
-        if (apiService != null) {
-            scope.launch {
+    LaunchedEffect(vmid) {
+        scope.launch {
+            try {
                 isLoading = true
                 errorMessage = null
-                try {
-                    // Find the node and container (stub: search all nodes in cache)
-                    val nodes = viewModel.getCachedNodes() ?: emptyList()
-                    val found = nodes.flatMap { node ->
-                        try {
-                            apiService.getContainers(node.node).data ?: emptyList()
-                        } catch (e: Exception) {
-                            emptyList()
-                        }
-                    }.find { it.vmid == vmid }
-                    container = found
-                    cpu = found?.cpu ?: 0.0
-                    ram = found?.mem ?: 0L
-                } catch (e: Exception) {
-                    errorMessage = "Failed to load container: ${e.message}"
-                } finally {
+                
+                // Get the API service
+                val apiService = viewModel.getApiService()
+                if (apiService == null) {
+                    errorMessage = "Not authenticated"
                     isLoading = false
+                    return@launch
                 }
+
+                // Find the container by searching all nodes
+                val nodes = viewModel.getCachedNodes() ?: emptyList()
+                var foundContainer: Container? = null
+                var foundNode: String? = null
+                
+                for (node in nodes) {
+                    try {
+                        val containers = apiService.getContainers(node.node).data ?: emptyList()
+                        val container = containers.find { it.vmid == vmid }
+                        if (container != null) {
+                            foundContainer = container
+                            foundNode = node.node
+                            break
+                        }
+                    } catch (e: Exception) {
+                        // Continue searching other nodes
+                    }
+                }
+
+                if (foundContainer != null && foundNode != null) {
+                    container = foundContainer
+                    cpu = foundContainer.cpu
+                    ram = foundContainer.mem
+                    maxCpu = foundContainer.maxcpu
+                    maxRam = foundContainer.maxmem
+                } else {
+                    errorMessage = "Container not found"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Failed to load container: ${e.message}"
+            } finally {
+                isLoading = false
             }
         }
     }
@@ -490,94 +517,342 @@ fun ContainerDetailScreen(
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    // Refresh button
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                // Reload container data
+                                try {
+                                    isLoading = true
+                                    errorMessage = null
+                                    
+                                    val apiService = viewModel.getApiService()
+                                    if (apiService == null) {
+                                        errorMessage = "Not authenticated"
+                                        isLoading = false
+                                        return@launch
+                                    }
+
+                                    // Find the container by searching all nodes
+                                    val nodes = viewModel.getCachedNodes() ?: emptyList()
+                                    var foundContainer: Container? = null
+                                    var foundNode: String? = null
+                                    
+                                    for (node in nodes) {
+                                        try {
+                                            val containers = apiService.getContainers(node.node).data ?: emptyList()
+                                            val container = containers.find { it.vmid == vmid }
+                                            if (container != null) {
+                                                foundContainer = container
+                                                foundNode = node.node
+                                                break
+                                            }
+                                        } catch (e: Exception) {
+                                            // Continue searching other nodes
+                                        }
+                                    }
+
+                                    if (foundContainer != null && foundNode != null) {
+                                        val containerData = foundContainer!!
+                                        container = containerData
+                                        cpu = containerData.cpu
+                                        ram = containerData.mem
+                                        maxCpu = containerData.maxcpu
+                                        maxRam = containerData.maxmem
+                                    } else {
+                                        errorMessage = "Container not found"
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Failed to load container: ${e.message}"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                    }
                 }
             )
         }
     ) { paddingValues ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator()
             }
         } else if (container != null) {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(paddingValues)
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Name: ${container!!.name}", style = MaterialTheme.typography.titleLarge)
-                Text("Status: ${container!!.status}")
-                Text("CPU: ${(cpu * 100).format(1)}%", style = MaterialTheme.typography.bodyLarge)
-                Text("RAM: ${if (ram >= 1024 * 1024 * 1024) "${(ram.toDouble() / 1024 / 1024 / 1024).format(1)}GB" else "${(ram.toDouble() / 1024 / 1024).format(1)}MB"}", style = MaterialTheme.typography.bodyLarge)
-                Text("Uptime: ${(container!!.uptime / 3600).toInt()}h")
-                // Editable fields
-                Spacer(Modifier.height(16.dp))
-                Text("Edit Resources", style = MaterialTheme.typography.titleMedium)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("CPU (%)", Modifier.width(80.dp))
-                    Slider(
-                        value = (cpu * 100).toFloat(),
-                        onValueChange = { cpu = it.toDouble() / 100.0 },
-                        valueRange = 1f..100f,
-                        steps = 99,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text("${(cpu * 100).format(1)}%", Modifier.width(60.dp))
+                // Container Info Section
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Container Information",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text("Name: ${container!!.name}")
+                            Text("ID: ${container!!.vmid}")
+                            Text(
+                                text = "Status: ${container!!.status}",
+                                color = when (container!!.status) {
+                                    "running" -> Color.Green
+                                    "stopped" -> Color.Red
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                            Text("Uptime: ${(container!!.uptime / 3600).toInt()}h")
+                        }
+                    }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("RAM (MB)", Modifier.width(80.dp))
-                    Slider(
-                        value = (ram / 1024f / 1024f).toFloat(),
-                        onValueChange = { ram = (it * 1024 * 1024).toLong() },
-                        valueRange = 128f..65536f,
-                        steps = 65535,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text("${(ram / 1024 / 1024)}MB", Modifier.width(60.dp))
+
+                // Current Resource Usage Section
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Current Resource Usage",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text("CPU: ${(cpu * 100).format(1)}% / ${maxCpu}%")
+                            Text("RAM: ${formatBytes(ram)} / ${formatBytes(maxRam)}")
+                        }
+                    }
                 }
-                Button(onClick = {
-                    // TODO: Call API to update resources
-                    errorMessage = "Live resource editing not yet implemented."
-                }) {
-                    Text("Apply Changes")
+
+                // Resource Management Section
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "Resource Management",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            // CPU Configuration
+                            Column {
+                                Text("CPU Cores", style = MaterialTheme.typography.bodyMedium)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Slider(
+                                        value = maxCpu.toFloat(),
+                                        onValueChange = { maxCpu = it.toInt() },
+                                        valueRange = 1f..32f,
+                                        steps = 31,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text("${maxCpu} cores", Modifier.width(80.dp))
+                                }
+                            }
+                            
+                            // RAM Configuration
+                            Column {
+                                Text("RAM Allocation", style = MaterialTheme.typography.bodyMedium)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Slider(
+                                        value = (maxRam / 1024f / 1024f).toFloat(),
+                                        onValueChange = { maxRam = (it * 1024 * 1024).toLong() },
+                                        valueRange = 128f..65536f,
+                                        steps = 65535,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text("${formatBytes(maxRam)}", Modifier.width(80.dp))
+                                }
+                            }
+                            
+                            // Apply Changes Button
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isUpdatingResources = true
+                                        try {
+                                            // TODO: Implement API call to update container resources
+                                            // This would require additional API endpoints for resource management
+                                            errorMessage = "Resource management API not yet implemented"
+                                        } catch (e: Exception) {
+                                            errorMessage = "Failed to update resources: ${e.message}"
+                                        } finally {
+                                            isUpdatingResources = false
+                                        }
+                                    }
+                                },
+                                enabled = !isUpdatingResources,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                if (isUpdatingResources) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(Icons.Filled.Save, contentDescription = null)
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text("Apply Resource Changes")
+                            }
+                        }
+                    }
                 }
+
+                // Action Buttons Section
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Container Actions",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            // TODO: Implement start container action
+                                            errorMessage = "Start action not yet implemented"
+                                        }
+                                    },
+                                    enabled = container!!.status != "running",
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Start")
+                                }
+                                
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            // TODO: Implement stop container action
+                                            errorMessage = "Stop action not yet implemented"
+                                        }
+                                    },
+                                    enabled = container!!.status == "running",
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Filled.Stop, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Stop")
+                                }
+                            }
+                            
+                            OutlinedButton(
+                                onClick = {
+                                    // TODO: Implement console access
+                                    errorMessage = "Console access not yet implemented"
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Filled.Terminal, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Open Console")
+                            }
+                        }
+                    }
+                }
+
+                // Error Message
                 if (errorMessage != null) {
-                    Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = errorMessage!!,
+                                modifier = Modifier.padding(16.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                 }
             }
         } else if (errorMessage != null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Error,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                    Button(onClick = { navController.navigateUp() }) {
+                        Text("Go Back")
+                    }
+                }
             }
         }
     }
-} 
+}
 
-@Composable
-fun ConfirmationDialog(
-    title: String,
-    message: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(message) },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm()
-                    onDismiss()
-                }
-            ) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
+// Helper function to format bytes
+fun formatBytes(bytes: Long): String {
+    return when {
+        bytes >= 1024 * 1024 * 1024 -> "${(bytes.toDouble() / 1024 / 1024 / 1024).format(1)}GB"
+        bytes >= 1024 * 1024 -> "${(bytes.toDouble() / 1024 / 1024).format(1)}MB"
+        bytes >= 1024 -> "${(bytes.toDouble() / 1024).format(1)}KB"
+        else -> "${bytes}B"
+    }
 } 
