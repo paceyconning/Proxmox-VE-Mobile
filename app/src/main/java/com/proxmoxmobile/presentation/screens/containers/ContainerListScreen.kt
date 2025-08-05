@@ -35,6 +35,7 @@ import androidx.compose.foundation.background
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.text.style.TextAlign
+import com.proxmoxmobile.presentation.navigation.Screen
 
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
@@ -220,7 +221,7 @@ fun ContainerListScreen(
                                 showSnackbar = true
                             }
                         ) {
-                            navController.navigate("containerDetail/${container.vmid}")
+                            navController.navigate(Screen.ContainerDetail.createRoute(container.vmid))
                         }
                     }
                 }
