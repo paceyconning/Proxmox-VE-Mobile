@@ -37,6 +37,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.text.style.TextAlign
 import com.proxmoxmobile.presentation.navigation.Screen
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
@@ -308,7 +310,7 @@ fun ContainerCard(
             
             Spacer(modifier = Modifier.height(6.dp))
             
-            // Resource Usage Timeline
+            // Resource Usage Graph
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -326,11 +328,13 @@ fun ContainerCard(
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
+                    
+                    // CPU Usage Bar
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
                                 text = "CPU",
                                 style = MaterialTheme.typography.labelSmall,
@@ -338,11 +342,26 @@ fun ContainerCard(
                             )
                             Text(
                                 text = "${(container.cpu * 100).format(1)}%",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Column {
+                        LinearProgressIndicator(
+                            progress = { container.cpu.toFloat() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    
+                    // RAM Usage Bar
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
                                 text = "RAM",
                                 style = MaterialTheme.typography.labelSmall,
@@ -350,11 +369,26 @@ fun ContainerCard(
                             )
                             Text(
                                 text = formatBytes(container.mem),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Column {
+                        LinearProgressIndicator(
+                            progress = { (container.mem.toFloat() / container.maxmem.toFloat()).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    
+                    // Disk Usage Bar
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
                                 text = "Disk",
                                 style = MaterialTheme.typography.labelSmall,
@@ -362,22 +396,18 @@ fun ContainerCard(
                             )
                             Text(
                                 text = formatBytes(container.disk),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Network",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${formatBytes(container.netin)}/s",
-                                style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium
                             )
                         }
+                        LinearProgressIndicator(
+                            progress = { 0.3f }, // Placeholder - would need actual disk capacity
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp),
+                            color = MaterialTheme.colorScheme.tertiary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     }
                 }
             }
@@ -928,15 +958,19 @@ fun ContainerDetailScreen(
                 Column {
                     Text("Current allocation: ${container?.cpus ?: 0} cores")
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Select number of CPU cores:")
-                    Slider(
-                        value = tempCpuCores.toFloat(),
-                        onValueChange = { tempCpuCores = it.toInt() },
-                        valueRange = 1f..32f,
-                        steps = 31,
-                        modifier = Modifier.fillMaxWidth()
+                    Text("Enter number of CPU cores (1-32):")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempCpuCores.toString(),
+                        onValueChange = { 
+                            val value = it.toIntOrNull() ?: 1
+                            tempCpuCores = value.coerceIn(1, 32)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        placeholder = { Text("1-32") }
                     )
-                    Text("${tempCpuCores} cores", style = MaterialTheme.typography.titleMedium)
                 }
             },
             confirmButton = {
@@ -967,15 +1001,21 @@ fun ContainerDetailScreen(
                 Column {
                     Text("Current allocation: ${formatBytes(container?.maxmem ?: 0)}")
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Select RAM allocation:")
-                    Slider(
-                        value = (tempRamAllocation / 1024f / 1024f).toFloat(),
-                        onValueChange = { tempRamAllocation = (it * 1024 * 1024).toLong() },
-                        valueRange = 128f..65536f,
-                        steps = 65535,
-                        modifier = Modifier.fillMaxWidth()
+                    Text("Enter RAM allocation in MB (128-65536):")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = (tempRamAllocation / 1024 / 1024).toString(),
+                        onValueChange = { 
+                            val value = it.toIntOrNull() ?: 512
+                            val mbValue = value.coerceIn(128, 65536)
+                            tempRamAllocation = (mbValue * 1024 * 1024).toLong()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        placeholder = { Text("512") }
                     )
-                    Text("${formatBytes(tempRamAllocation)}", style = MaterialTheme.typography.titleMedium)
+                    Text("${formatBytes(tempRamAllocation)}", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
