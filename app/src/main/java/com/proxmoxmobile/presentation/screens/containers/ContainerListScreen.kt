@@ -36,6 +36,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.text.style.TextAlign
 import com.proxmoxmobile.presentation.navigation.Screen
+import androidx.compose.ui.graphics.vector.ImageVector
 
 
 fun Double.format(digits: Int) = String.format(Locale.US, "%.${digits}f", this)
@@ -663,41 +664,25 @@ fun ContainerDetailScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             
-                            // CPU Configuration
-                            Column {
-                                Text("CPU Cores", style = MaterialTheme.typography.bodyMedium)
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Slider(
-                                        value = maxCpu.toFloat(),
-                                        onValueChange = { maxCpu = it.toInt() },
-                                        valueRange = 1f..32f,
-                                        steps = 31,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text("${maxCpu} cores", Modifier.width(80.dp))
+                            // CPU Configuration Card
+                            ResourceCard(
+                                title = "CPU Cores",
+                                currentValue = "${maxCpu} cores",
+                                icon = Icons.Filled.Memory,
+                                onClick = {
+                                    // TODO: Show CPU configuration dialog
                                 }
-                            }
+                            )
                             
-                            // RAM Configuration
-                            Column {
-                                Text("RAM Allocation", style = MaterialTheme.typography.bodyMedium)
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Slider(
-                                        value = (maxRam / 1024f / 1024f).toFloat(),
-                                        onValueChange = { maxRam = (it * 1024 * 1024).toLong() },
-                                        valueRange = 128f..65536f,
-                                        steps = 65535,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text("${formatBytes(maxRam)}", Modifier.width(80.dp))
+                            // RAM Configuration Card
+                            ResourceCard(
+                                title = "RAM Allocation",
+                                currentValue = formatBytes(maxRam),
+                                icon = Icons.Filled.Storage,
+                                onClick = {
+                                    // TODO: Show RAM configuration dialog
                                 }
-                            }
+                            )
                             
                             // Apply Changes Button
                             Button(
@@ -855,5 +840,74 @@ fun formatBytes(bytes: Long): String {
         bytes >= 1024 * 1024 -> "${(bytes.toDouble() / 1024 / 1024).format(1)}MB"
         bytes >= 1024 -> "${(bytes.toDouble() / 1024).format(1)}KB"
         else -> "${bytes}B"
+    }
+}
+
+@Composable
+fun ResourceCard(
+    title: String,
+    currentValue: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Icon
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            
+            // Content
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = currentValue,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Edit indicator
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = "Edit",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 } 
