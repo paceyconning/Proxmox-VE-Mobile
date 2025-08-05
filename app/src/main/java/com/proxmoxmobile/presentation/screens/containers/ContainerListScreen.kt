@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
 import com.proxmoxmobile.data.api.ProxmoxApiService
 
@@ -142,8 +143,10 @@ fun ContainerListScreen(
                     containers = validContainers.sortedBy { it.vmid }
                     Log.d("ContainerListScreen", "Successfully loaded ${containers.size} valid containers")
                     
-                    // Start real-time metrics collection
-                    startMetricsCollection(apiService, nodeName)
+                    // Start real-time metrics collection in background
+                    scope.launch {
+                        startMetricsCollection(apiService, nodeName)
+                    }
                     
                 } catch (e: retrofit2.HttpException) {
                     Log.e("ContainerListScreen", "HTTP error loading containers: ${e.code()}", e)
@@ -612,6 +615,9 @@ fun ContainerCard(
 
 // Real-time metrics collection
 private suspend fun startMetricsCollection(apiService: ProxmoxApiService, nodeName: String) {
+    // Initial delay to avoid interfering with initial load
+    delay(5000)
+    
     while (true) {
         try {
             val response = apiService.getContainers(nodeName)
@@ -629,11 +635,11 @@ private suspend fun startMetricsCollection(apiService: ProxmoxApiService, nodeNa
                 ResourceMetricsStorage.addMetric(container.vmid, metric)
             }
             
-            // Collect metrics every 10 seconds
-            delay(10000)
+            // Collect metrics every 30 seconds (less aggressive)
+            delay(30000)
         } catch (e: Exception) {
             Log.e("ContainerListScreen", "Failed to collect metrics", e)
-            delay(30000) // Wait longer on error
+            delay(60000) // Wait longer on error
         }
     }
 }
@@ -665,46 +671,72 @@ fun ContainerDetailScreen(
                 isLoading = true
                 errorMessage = null
                 
-                // Get the API service
-                val apiService = viewModel.getApiService()
-                if (apiService == null) {
-                    errorMessage = "Not authenticated"
-                    isLoading = false
-                    return@launch
-                }
-
-                // Find the container by searching all nodes
-                val nodes = viewModel.getCachedNodes() ?: emptyList()
-                var foundContainer: Container? = null
-                var foundNode: String? = null
-                
-                for (node in nodes) {
-                    try {
-                        val containers = apiService.getContainers(node.node).data ?: emptyList()
-                        val container = containers.find { it.vmid == vmid }
-                        if (container != null) {
-                            foundContainer = container
-                            foundNode = node.node
-                            break
-                        }
-                    } catch (e: Exception) {
-                        // Continue searching other nodes
+                // Add timeout for loading
+                withTimeout(15000) { // 15 second timeout
+                    // Get the API service
+                    val apiService = viewModel.getApiService()
+                    if (apiService == null) {
+                        errorMessage = "Not authenticated"
+                        isLoading = false
+                        return@withTimeout
                     }
-                }
 
-                if (foundContainer != null && foundNode != null) {
-                    container = foundContainer
-                    cpu = foundContainer.cpu
-                    ram = foundContainer.mem
-                    maxCpu = foundContainer.maxcpu
-                    maxRam = foundContainer.maxmem
-                    tempCpuCores = foundContainer.cpus
-                    tempRamAllocation = foundContainer.maxmem
-                } else {
-                    errorMessage = "Container not found"
+                    // Try to find container more efficiently
+                    val nodes = viewModel.getCachedNodes() ?: emptyList()
+                    var foundContainer: Container? = null
+                    var foundNode: String? = null
+                    
+                    // Try the first node first (most common case)
+                    if (nodes.isNotEmpty()) {
+                        try {
+                            val containers = apiService!!.getContainers(nodes[0].node).data ?: emptyList()
+                            val container = containers.find { it.vmid == vmid }
+                            if (container != null) {
+                                foundContainer = container
+                                foundNode = nodes[0].node
+                            }
+                        } catch (e: Exception) {
+                            Log.w("ContainerDetailScreen", "Failed to load from first node: ${e.message}")
+                        }
+                    }
+                    
+                    // If not found in first node, search others
+                    if (foundContainer == null) {
+                        for (i in 1 until nodes.size) {
+                                                    try {
+                            val containers = apiService!!.getContainers(nodes[i].node).data ?: emptyList()
+                            val container = containers.find { it.vmid == vmid }
+                            if (container != null) {
+                                foundContainer = container
+                                foundNode = nodes[i].node
+                                break
+                            }
+                        } catch (e: Exception) {
+                            Log.w("ContainerDetailScreen", "Failed to load from node ${nodes[i].node}: ${e.message}")
+                        }
+                        }
+                    }
+
+                    if (foundContainer != null && foundNode != null) {
+                        container = foundContainer
+                        cpu = foundContainer.cpu
+                        ram = foundContainer.mem
+                        maxCpu = foundContainer.maxcpu
+                        maxRam = foundContainer.maxmem
+                        tempCpuCores = foundContainer.cpus
+                        tempRamAllocation = foundContainer.maxmem
+                        Log.d("ContainerDetailScreen", "Successfully loaded container ${foundContainer.name}")
+                    } else {
+                        errorMessage = "Container not found"
+                        Log.e("ContainerDetailScreen", "Container $vmid not found in any node")
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = "Failed to load container: ${e.message}"
+                Log.e("ContainerDetailScreen", "Error loading container", e)
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                errorMessage = "Loading timeout - please try again"
+                Log.e("ContainerDetailScreen", "Loading timeout for container $vmid")
             } finally {
                 isLoading = false
             }
